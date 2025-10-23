@@ -432,7 +432,10 @@
     - Return user-friendly error messages
     - _Requirements: 7.3_
 
-- [ ] 9. Deploy and configure external services
+- [x] 9. Deploy and configure external services
+
+
+
   - [ ] 9.1 Set up Firebase project for FCM
     - Create Firebase project in console
     - Enable Cloud Messaging
