@@ -17,18 +17,45 @@ export default function Auth() {
   const [password, setPassword] = useState("");
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAuthAndProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (session) {
-        navigate("/");
-      }
-    });
+        // Check if user has completed onboarding
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .single();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/");
+        if (profile) {
+          navigate("/");
+        } else {
+          navigate("/onboarding");
+        }
       }
-    });
+    };
+
+    checkAuthAndProfile();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session) {
+          // Check if user has completed onboarding
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .single();
+
+          if (profile) {
+            navigate("/");
+          } else {
+            navigate("/onboarding");
+          }
+        }
+      }
+    );
 
     return () => subscription.unsubscribe();
   }, [navigate]);
@@ -55,7 +82,7 @@ export default function Auth() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/onboarding`,
+            emailRedirectTo: `${window.location.origin}/auth`,
           },
         });
 
@@ -65,7 +92,6 @@ export default function Auth() {
           title: "Conta criada!",
           description: "Vamos começar sua jornada.",
         });
-        navigate("/onboarding");
       }
     } catch (error: any) {
       toast({
@@ -84,12 +110,12 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/onboarding`,
+          redirectTo: `${window.location.origin}/auth`,
         },
       });
 
       if (error) throw error;
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Erro",
         description: error.message,

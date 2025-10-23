@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     nickname: "",
     archetype: "",
@@ -55,12 +55,57 @@ export default function Onboarding() {
     pricePerPack: "",
   });
 
+  useEffect(() => {
+    const checkProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          navigate("/auth");
+          return;
+        }
+
+        // Check if user already has a profile
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (profile) {
+          // User already completed onboarding
+          navigate("/");
+          return;
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Profile check error:", error);
+        setIsLoading(false);
+      }
+    };
+
+    checkProfile();
+  }, [navigate]);
+
   const handleSubmit = async () => {
     setIsLoading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
+
+      // Check if profile already exists
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (existingProfile) {
+        navigate("/");
+        return;
+      }
 
       // Create profile
       const { error: profileError } = await supabase.from("profiles").insert({
@@ -87,7 +132,7 @@ export default function Onboarding() {
       });
 
       navigate("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Erro",
         description: error.message,
@@ -97,6 +142,14 @@ export default function Onboarding() {
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -125,13 +178,12 @@ export default function Onboarding() {
                 onChange={(e) =>
                   setFormData({ ...formData, nickname: e.target.value })
                 }
-                disabled={isLoading}
               />
             </div>
             <Button
               className="w-full glow-primary-subtle"
               onClick={() => setStep(2)}
-              disabled={!formData.nickname || isLoading}
+              disabled={!formData.nickname}
             >
               Continuar
             </Button>
@@ -191,7 +243,7 @@ export default function Onboarding() {
               <Button
                 className="flex-1 glow-primary-subtle"
                 onClick={() => setStep(3)}
-                disabled={!formData.archetype || isLoading}
+                disabled={!formData.archetype}
               >
                 Continuar
               </Button>
@@ -215,7 +267,6 @@ export default function Onboarding() {
                       cigarettesPerDay: e.target.value,
                     })
                   }
-                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -229,7 +280,6 @@ export default function Onboarding() {
                   onChange={(e) =>
                     setFormData({ ...formData, pricePerPack: e.target.value })
                   }
-                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -246,15 +296,10 @@ export default function Onboarding() {
                 onClick={handleSubmit}
                 disabled={
                   !formData.cigarettesPerDay ||
-                  !formData.pricePerPack ||
-                  isLoading
+                  !formData.pricePerPack
                 }
               >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Começar Jornada"
-                )}
+                Começar Jornada
               </Button>
             </div>
           </div>
