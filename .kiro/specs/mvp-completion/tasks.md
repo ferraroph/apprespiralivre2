@@ -76,27 +76,36 @@
     - Update content table RLS for admin management
     - _Requirements: 5.4, 5.5_
 
-- [ ] 2. Implement AI Coach Edge Function
-  - [ ] 2.1 Create ai-coach Edge Function with Lovable AI integration
+- [x] 2. Implement AI Coach Edge Function
+
+
+
+  - [x] 2.1 Create ai-coach Edge Function with Lovable AI integration
+
+
     - Set up Edge Function boilerplate in supabase/functions/ai-coach
     - Implement request validation for message and includeContext
     - Fetch user profile and progress data when includeContext is true
     - Call Lovable AI endpoint with LOVABLE_API_KEY
     - _Requirements: 1.2_
   
-  - [ ] 2.2 Implement streaming response with Server-Sent Events
+
+  - [x] 2.2 Implement streaming response with Server-Sent Events
     - Set up SSE response headers
     - Stream AI responses chunk by chunk
     - Handle connection errors and timeouts
     - _Requirements: 1.3_
   
-  - [ ] 2.3 Persist chat messages to database
+  - [x] 2.3 Persist chat messages to database
+
     - Insert user message to chat_messages before AI call
     - Store complete AI response after streaming completes
     - Handle database errors gracefully
     - _Requirements: 1.1, 1.4_
   
-  - [ ] 2.4 Create system prompt for smoking cessation coaching
+
+  - [x] 2.4 Create system prompt for smoking cessation coaching
+
     - Write empathetic and supportive system prompt
     - Include context about user's progress in prompt
     - Test prompt generates helpful responses
