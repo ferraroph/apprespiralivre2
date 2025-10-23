@@ -1,4 +1,4 @@
-import { Home, Trophy, BookOpen, Users, User, ChevronLeft } from "lucide-react";
+import { Home, Trophy, BookOpen, Users, User, ChevronLeft, UsersRound } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ const navItems = [
   { icon: Trophy, label: "Ligas", path: "/leagues" },
   { icon: BookOpen, label: "Conteúdo", path: "/content" },
   { icon: Users, label: "Comunidade", path: "/community" },
+  { icon: UsersRound, label: "Squads", path: "/squads" },
   { icon: User, label: "Perfil", path: "/profile" },
 ];
 
@@ -46,7 +47,8 @@ export function DesktopSidebar() {
 
       <nav className="flex-1 space-y-2 px-3">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || 
+            (item.path === "/squads" && location.pathname.startsWith("/squads/"));
           const Icon = item.icon;
 
           return (

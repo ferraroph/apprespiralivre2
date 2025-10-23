@@ -9,6 +9,8 @@ import Leagues from "./pages/Leagues";
 import Content from "./pages/Content";
 import Community from "./pages/Community";
 import Profile from "./pages/Profile";
+import Squads from "./pages/Squads";
+import SquadDetailPage from "./pages/SquadDetailPage";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
@@ -28,6 +30,8 @@ const App = () => (
           <Route path="/leagues" element={<AppLayout><Leagues /></AppLayout>} />
           <Route path="/content" element={<AppLayout><Content /></AppLayout>} />
           <Route path="/community" element={<AppLayout><Community /></AppLayout>} />
+          <Route path="/squads" element={<AppLayout><Squads /></AppLayout>} />
+          <Route path="/squads/:id" element={<AppLayout><SquadDetailPage /></AppLayout>} />
           <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

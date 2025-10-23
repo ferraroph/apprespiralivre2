@@ -159,41 +159,58 @@
     - Handle permission denied gracefully
     - _Requirements: 2.1_
 
-- [ ] 4. Implement Squads system
-  - [ ] 4.1 Create squad management Edge Functions
+- [x] 4. Implement Squads system
+
+
+
+
+
+  - [x] 4.1 Create squad management Edge Functions
+
+
     - Implement create-squad function (name, description validation)
     - Implement join-squad function (check max_members limit)
     - Implement leave-squad function (handle leader transfer)
     - _Requirements: 3.1, 3.2_
   
-  - [ ] 4.2 Create SquadList component for browsing squads
+  - [x] 4.2 Create SquadList component for browsing squads
+
+
     - Fetch and display all squads with member counts
     - Show squad_streak for each squad
     - Implement join squad button
     - Handle loading and error states
     - _Requirements: 3.1, 3.2_
   
-  - [ ] 4.3 Create SquadDetail component for squad information
+  - [x] 4.3 Create SquadDetail component for squad information
+
+
     - Display squad name, description, and stats
     - Show list of squad members with profiles
     - Display squad leaderboard ranked by squad_streak
     - _Requirements: 3.5_
   
-  - [ ] 4.4 Create SquadChat component with Supabase Realtime
+  - [x] 4.4 Create SquadChat component with Supabase Realtime
+
+
     - Set up Realtime subscription to squad_messages
     - Display messages in chronological order
     - Implement send message functionality
     - Show user avatars and names
     - _Requirements: 3.3_
   
-  - [ ] 4.5 Create CreateSquadDialog component
+  - [x] 4.5 Create CreateSquadDialog component
+
+
     - Build form with name and description fields
     - Validate input (name required, max lengths)
     - Call create-squad Edge Function
     - Handle success and error states
     - _Requirements: 3.1_
   
-  - [ ] 4.6 Add squads navigation to main app layout
+  - [x] 4.6 Add squads navigation to main app layout
+
+
     - Add Squads link to navigation menu
     - Create /squads route in App.tsx
     - Create /squads/:id route for squad detail

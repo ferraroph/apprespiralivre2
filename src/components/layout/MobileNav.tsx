@@ -1,11 +1,11 @@
-import { Home, Trophy, BookOpen, Users, User } from "lucide-react";
+import { Home, Trophy, BookOpen, Users, User, UsersRound } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { icon: Home, label: "Início", path: "/" },
   { icon: Trophy, label: "Ligas", path: "/leagues" },
-  { icon: BookOpen, label: "Conteúdo", path: "/content" },
+  { icon: UsersRound, label: "Squads", path: "/squads" },
   { icon: Users, label: "Comunidade", path: "/community" },
   { icon: User, label: "Perfil", path: "/profile" },
 ];
