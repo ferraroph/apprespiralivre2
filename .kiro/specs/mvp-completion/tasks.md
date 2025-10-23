@@ -111,35 +111,49 @@
     - Test prompt generates helpful responses
     - _Requirements: 1.2_
 
-- [ ] 3. Implement Push Notifications system
-  - [ ] 3.1 Create send-notification Edge Function
+- [x] 3. Implement Push Notifications system
+
+
+
+
+
+  - [x] 3.1 Create send-notification Edge Function
+
+
     - Set up Edge Function boilerplate
     - Implement FCM token retrieval from user_tokens table
     - Integrate FCM REST API with FCM_SERVER_KEY
     - Handle token expiration and cleanup
     - _Requirements: 2.5_
   
-  - [ ] 3.2 Implement notification types (daily reminder, streak at risk, achievement)
+  - [x] 3.2 Implement notification types (daily reminder, streak at risk, achievement)
+
     - Create notification payload builder for each type
     - Query users who need daily reminders (no check-in today)
     - Query users with streak at risk (48h without check-in)
     - Send achievement notifications on unlock
     - _Requirements: 2.2, 2.3, 2.4_
   
-  - [ ] 3.3 Set up pg_cron jobs for scheduled notifications
+  - [x] 3.3 Set up pg_cron jobs for scheduled notifications
+
+
     - Create cron job for daily check-in reminder at 9 AM
     - Create cron job for streak at risk check every 6 hours
     - Test cron jobs trigger Edge Function correctly
     - _Requirements: 2.2, 2.3_
   
-  - [ ] 3.4 Create Firebase messaging service worker for frontend
+  - [x] 3.4 Create Firebase messaging service worker for frontend
+
+
     - Write firebase-messaging-sw.js in public folder
     - Implement background notification handling
     - Request notification permission on app load
     - Register FCM token with backend
     - _Requirements: 2.1_
   
-  - [ ] 3.5 Create usePushNotifications hook for token management
+  - [x] 3.5 Create usePushNotifications hook for token management
+
+
     - Implement FCM token registration
     - Store token in user_tokens table
     - Handle permission denied gracefully
