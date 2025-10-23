@@ -216,41 +216,57 @@
     - Create /squads/:id route for squad detail
     - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 5. Implement In-App Purchases with Stripe
-  - [ ] 5.1 Create create-payment Edge Function
+- [x] 5. Implement In-App Purchases with Stripe
+
+
+
+
+
+  - [x] 5.1 Create create-payment Edge Function
+
+
     - Set up Stripe SDK with STRIPE_SECRET_KEY
     - Create Checkout session for each product type
     - Store pending purchase in purchases table
     - Return checkout URL to frontend
     - _Requirements: 4.1_
   
-  - [ ] 5.2 Create webhook-stripe Edge Function
+  - [x] 5.2 Create webhook-stripe Edge Function
+
+
     - Verify Stripe webhook signature with STRIPE_WEBHOOK_SECRET
     - Handle checkout.session.completed event
     - Update purchase status to 'completed'
     - Apply product benefits to user profile
     - _Requirements: 4.2_
   
-  - [ ] 5.3 Implement product benefit logic
+  - [x] 5.3 Implement product benefit logic
+
     - Streak Freeze: Increment streak_freeze_count
     - Premium Monthly: Set premium_until to NOW() + 30 days
     - Remove Ads: Set ads_removed to true
     - _Requirements: 4.3, 4.4_
   
-  - [ ] 5.4 Create PurchaseDialog component for product selection
+  - [x] 5.4 Create PurchaseDialog component for product selection
+
+
     - Display available products with prices
     - Show product descriptions and benefits
     - Call create-payment Edge Function on purchase
     - Redirect to Stripe Checkout
     - _Requirements: 4.1_
   
-  - [ ] 5.5 Create usePremium hook for subscription validation
+  - [x] 5.5 Create usePremium hook for subscription validation
+
+
     - Check if premium_until > current timestamp
     - Return premium status and expiration date
     - Use in components to gate premium features
     - _Requirements: 4.5_
   
-  - [ ] 5.6 Add purchase UI to profile page
+  - [x] 5.6 Add purchase UI to profile page
+
+
     - Show current premium status
     - Display streak freeze count
     - Show "Remove Ads" status

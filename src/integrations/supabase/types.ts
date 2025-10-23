@@ -124,38 +124,50 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ads_removed: boolean | null
           archetype: string | null
           avatar_url: string | null
           cigarettes_per_day: number | null
           created_at: string | null
           id: string
           nickname: string
+          premium_until: string | null
           price_per_pack: number | null
           quit_date: string | null
+          role: string | null
+          streak_freeze_count: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          ads_removed?: boolean | null
           archetype?: string | null
           avatar_url?: string | null
           cigarettes_per_day?: number | null
           created_at?: string | null
           id?: string
           nickname: string
+          premium_until?: string | null
           price_per_pack?: number | null
           quit_date?: string | null
+          role?: string | null
+          streak_freeze_count?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          ads_removed?: boolean | null
           archetype?: string | null
           avatar_url?: string | null
           cigarettes_per_day?: number | null
           created_at?: string | null
           id?: string
           nickname?: string
+          premium_until?: string | null
           price_per_pack?: number | null
           quit_date?: string | null
+          role?: string | null
+          streak_freeze_count?: number | null
           updated_at?: string | null
           user_id?: string
         }
@@ -212,6 +224,192 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           xp?: number | null
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          id: string
+          product_id: string
+          status: string | null
+          stripe_payment_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          product_id: string
+          status?: string | null
+          stripe_payment_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          product_id?: string
+          status?: string | null
+          stripe_payment_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_tokens: {
+        Row: {
+          created_at: string | null
+          device_type: string | null
+          fcm_token: string
+          id: string
+          last_used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_type?: string | null
+          fcm_token: string
+          id?: string
+          last_used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_type?: string | null
+          fcm_token?: string
+          id?: string
+          last_used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      squads: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          max_members: number | null
+          name: string
+          squad_streak: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          max_members?: number | null
+          name: string
+          squad_streak?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          max_members?: number | null
+          name?: string
+          squad_streak?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      squad_members: {
+        Row: {
+          id: string
+          joined_at: string | null
+          role: string | null
+          squad_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          squad_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          squad_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      squad_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          squad_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          squad_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          squad_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          created_at: string | null
+          event_name: string
+          id: string
+          properties: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_name: string
+          id?: string
+          properties?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_name?: string
+          id?: string
+          properties?: Json | null
+          user_id?: string | null
         }
         Relationships: []
       }
