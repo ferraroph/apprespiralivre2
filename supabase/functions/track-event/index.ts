@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { withRateLimit } from "../_shared/rate-limit.ts";
+import { createErrorResponse, ErrorCodes, handleError } from "../_shared/error-handler.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +11,7 @@ const corsHeaders = {
 interface AnalyticsEvent {
   event_name: string;
   user_id?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   timestamp?: string;
 }
 
@@ -38,6 +40,12 @@ serve(async (req) => {
       
       if (!authError && user) {
         authenticatedUserId = user.id;
+        
+        // Apply rate limiting for authenticated users
+        const rateLimitResponse = await withRateLimit(user.id, 100);
+        if (rateLimitResponse) {
+          return rateLimitResponse;
+        }
       }
     }
 
@@ -110,10 +118,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in track-event:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return handleError(error, corsHeaders);
   }
 });

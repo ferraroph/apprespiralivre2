@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { createErrorResponse, ErrorCodes, handleError } from "../_shared/error-handler.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,11 +96,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in webhook-stripe:", error);
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return handleError(error, corsHeaders);
   }
 });
 
@@ -120,7 +117,7 @@ async function applyProductBenefits(
     throw new Error("Failed to fetch profile");
   }
 
-  let updateData: any = {};
+  let updateData: unknown = {};
 
   switch (productId) {
     case "streak_freeze":

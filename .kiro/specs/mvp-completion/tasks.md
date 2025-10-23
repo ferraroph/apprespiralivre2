@@ -373,42 +373,59 @@
     - Include previous_streak_count
     - _Requirements: 6.4_
 
-- [ ] 8. Implement Production Configuration
-  - [ ] 8.1 Set up Upstash Redis for rate limiting
+- [x] 8. Implement Production Configuration
+
+
+
+
+
+  - [x] 8.1 Set up Upstash Redis for rate limiting
+
+
     - Create rate-limit utility with Redis client
     - Implement sliding window rate limiting (100 req/min)
     - Apply to all Edge Functions
     - Return 429 status when limit exceeded
     - _Requirements: 7.2_
   
-  - [ ] 8.2 Integrate Sentry for error tracking
+  - [x] 8.2 Integrate Sentry for error tracking
+
+
     - Initialize Sentry in main.tsx with SENTRY_DSN
     - Configure BrowserTracing and Replay integrations
     - Add Sentry error boundaries to key components
     - Test error reporting in development
     - _Requirements: 7.3_
   
-  - [ ] 8.3 Create service worker for asset caching
+  - [x] 8.3 Create service worker for asset caching
+
+
     - Write sw.js with cache-first strategy
     - Cache static assets (HTML, CSS, JS)
     - Implement cache versioning
     - Register service worker in main.tsx
     - _Requirements: 7.4_
   
-  - [ ] 8.4 Configure Supabase Auth for production
+  - [x] 8.4 Configure Supabase Auth for production
+
+
     - Enable email confirmation in Supabase dashboard
     - Disable auto-confirm for new users
     - Test email confirmation flow
     - _Requirements: 7.1_
   
-  - [ ] 8.5 Create environment variable validation
+  - [x] 8.5 Create environment variable validation
+
+
     - Write validateEnv function to check required variables
     - Call on application startup
     - Fail fast with clear error messages if missing
     - Document all required variables in README
     - _Requirements: 7.5_
   
-  - [ ] 8.6 Add error handling to all Edge Functions
+  - [x] 8.6 Add error handling to all Edge Functions
+
+
     - Implement standard error response format
     - Use error codes (UNAUTHORIZED, RATE_LIMIT_EXCEEDED, etc.)
     - Log errors to Sentry from Edge Functions

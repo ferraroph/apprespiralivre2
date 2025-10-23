@@ -206,3 +206,85 @@ supabase functions deploy send-notification
 ---
 
 **Desenvolvido com Lovable Cloud & Lovable AI**
+
+
+---
+
+## Environment Variables
+
+### Required Variables
+
+The following environment variables are **required** for the application to run:
+
+```env
+# Supabase Configuration (Required)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your_publishable_key_here
+```
+
+### Optional Variables
+
+These variables enable additional features but are not required for basic functionality:
+
+```env
+# Sentry Error Tracking (Optional)
+VITE_SENTRY_DSN=your_sentry_dsn_here
+```
+
+### Edge Function Environment Variables
+
+The following secrets should be configured in Supabase for Edge Functions:
+
+```bash
+# AI Coach (Lovable AI)
+LOVABLE_API_KEY=your_lovable_api_key
+
+# Push Notifications (Firebase Cloud Messaging)
+FCM_SERVER_KEY=your_fcm_server_key
+
+# In-App Purchases (Stripe)
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+# Rate Limiting (Upstash Redis)
+UPSTASH_REDIS_URL=your_upstash_redis_url
+UPSTASH_REDIS_TOKEN=your_upstash_redis_token
+
+# Error Tracking (Sentry - for Edge Functions)
+SENTRY_DSN=your_sentry_dsn
+```
+
+### Setting Up Environment Variables
+
+1. **Local Development:**
+   - Copy `.env.example` to `.env` (if available)
+   - Or create a new `.env` file in the project root
+   - Add your Supabase credentials
+
+2. **Production Deployment:**
+   - Set environment variables in your hosting platform (Vercel, Netlify, etc.)
+   - Ensure all required variables are configured
+
+3. **Supabase Secrets:**
+   ```bash
+   # Set secrets for Edge Functions
+   supabase secrets set LOVABLE_API_KEY=your_key
+   supabase secrets set FCM_SERVER_KEY=your_key
+   supabase secrets set STRIPE_SECRET_KEY=your_key
+   # ... etc
+   ```
+
+### Environment Validation
+
+The application automatically validates environment variables on startup. If required variables are missing, you'll see a clear error message indicating which variables need to be configured.
+
+To manually validate environment variables:
+
+```typescript
+import { validateEnv } from './lib/validateEnv';
+
+const result = validateEnv();
+console.log('Valid:', result.valid);
+console.log('Missing:', result.missing);
+console.log('Warnings:', result.warnings);
+```

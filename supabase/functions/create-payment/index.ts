@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import { withRateLimit } from "../_shared/rate-limit.ts";
+import { createErrorResponse, ErrorCodes, handleError } from "../_shared/error-handler.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,6 +77,12 @@ serve(async (req) => {
       );
     }
 
+    // Apply rate limiting
+    const rateLimitResponse = await withRateLimit(user.id, 100);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Validate request
     const body: CreatePaymentRequest = await req.json();
 
@@ -145,10 +153,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in create-payment:", error);
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return handleError(error, corsHeaders);
   }
 });
