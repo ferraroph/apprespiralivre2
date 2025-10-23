@@ -5,7 +5,7 @@
 - **Framework**: React 18 + TypeScript
 - **Build Tool**: Vite 5
 - **Routing**: React Router v6
-- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **Backend**: Lovable Cloud (Supabase - PostgreSQL + Edge Functions)
 - **State Management**: TanStack Query (React Query)
 - **Forms**: React Hook Form + Zod validation
 
@@ -60,3 +60,13 @@ Required in `.env`:
 - `zod`: Schema validation
 - `date-fns`: Date utilities
 - `recharts`: Data visualization
+
+## Lovable Cloud Integration
+
+This project uses **Lovable Cloud**, which is Lovable's managed Supabase integration. Key points:
+
+- **Database tables**: Created via Lovable chat prompts. Lovable generates SQL snippets that must be run in Supabase Dashboard SQL Editor.
+- **Authentication**: Configured in Supabase Dashboard (Authentication → Providers). OAuth providers like Google require Client ID/Secret from provider's console.
+- **Edge Functions**: Deployed via Supabase CLI (`supabase functions deploy <function-name>`). Secrets managed via `supabase secrets set KEY=value`.
+- **File Storage**: Managed through Supabase Storage. Free tier: 50MB per file limit.
+- **Security**: Row Level Security (RLS) policies must be configured in Supabase Dashboard before production.
