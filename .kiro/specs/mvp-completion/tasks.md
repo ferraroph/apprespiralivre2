@@ -1,57 +1,76 @@
 # Implementation Plan
 
-- [ ] 1. Set up database schema for new features
-  - [ ] 1.1 Create chat_messages table with RLS policies for AI Coach
+- [x] 1. Set up database schema for new features
+
+
+
+
+
+  - [x] 1.1 Create chat_messages table with RLS policies for AI Coach
+
+
     - Write migration script for chat_messages table
     - Add indexes for performance (user_id, created_at)
     - Implement RLS policies for user message access
     - _Requirements: 1.1, 1.4_
   
-  - [ ] 1.2 Create user_tokens table for FCM push notifications
+
+  - [x] 1.2 Create user_tokens table for FCM push notifications
+
     - Write migration script for user_tokens table
     - Add unique constraint on fcm_token
     - Add index on user_id for fast lookups
     - _Requirements: 2.1_
   
-  - [ ] 1.3 Create squads, squad_members, and squad_messages tables
+  - [x] 1.3 Create squads, squad_members, and squad_messages tables
+
     - Write migration script for all three squad tables
     - Implement foreign key relationships with CASCADE deletes
     - Add unique constraint on (squad_id, user_id) in squad_members
     - Create indexes for performance optimization
     - _Requirements: 3.1, 3.2_
   
-  - [ ] 1.4 Create update_squad_streak database function and trigger
+
+  - [x] 1.4 Create update_squad_streak database function and trigger
+
     - Write function to calculate minimum streak across squad members
     - Create trigger on squad_members INSERT/UPDATE
     - Test trigger updates squad_streak correctly
     - _Requirements: 3.4_
   
-  - [ ] 1.5 Implement RLS policies for squads system
+  - [x] 1.5 Implement RLS policies for squads system
+
     - Create policy for public squad viewing
     - Create policy for squad member access to membership data
     - Create policy for squad member access to messages
     - Create policy for squad members to send messages
     - _Requirements: 3.2, 3.3_
   
-  - [ ] 1.6 Create purchases table and extend profiles for IAP
+  - [x] 1.6 Create purchases table and extend profiles for IAP
+
     - Write migration for purchases table
     - Add streak_freeze_count, premium_until, ads_removed to profiles
     - Add indexes on purchases (user_id, stripe_payment_id)
     - _Requirements: 4.2, 4.3, 4.4_
   
-  - [ ] 1.7 Create analytics_events table for event tracking
+  - [x] 1.7 Create analytics_events table for event tracking
+
     - Write migration for analytics_events table
     - Add indexes on event_name, user_id, created_at
     - Use JSONB for flexible properties storage
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
   
-  - [ ] 1.8 Set up content-media storage bucket with RLS policies
+
+
+  - [x] 1.8 Set up content-media storage bucket with RLS policies
+
     - Create storage bucket with public read access
     - Implement RLS policy for public viewing
     - Implement RLS policy for admin-only uploads
     - _Requirements: 5.1, 5.2, 5.4_
   
-  - [ ] 1.9 Add role column to profiles table for admin access
+  - [x] 1.9 Add role column to profiles table for admin access
+
     - Write migration to add role column with CHECK constraint
     - Set default role to 'user'
     - Update content table RLS for admin management
