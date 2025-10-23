@@ -11,6 +11,7 @@ import Community from "./pages/Community";
 import Profile from "./pages/Profile";
 import Squads from "./pages/Squads";
 import SquadDetailPage from "./pages/SquadDetailPage";
+import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/squads" element={<AppLayout><Squads /></AppLayout>} />
           <Route path="/squads/:id" element={<AppLayout><SquadDetailPage /></AppLayout>} />
           <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
+          <Route path="/admin" element={<AppLayout><Admin /></AppLayout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -273,34 +273,48 @@
     - Add "Upgrade" button to open PurchaseDialog
     - _Requirements: 4.3, 4.4, 4.5_
 
-- [ ] 6. Implement Content Management System
-  - [ ] 6.1 Create AdminContentUpload component
+- [x] 6. Implement Content Management System
+
+
+
+
+  - [x] 6.1 Create AdminContentUpload component
+
+
     - Build file upload form for audio/video
     - Upload files to content-media storage bucket
     - Show upload progress
     - Return public URL after upload
     - _Requirements: 5.2_
   
-  - [ ] 6.2 Create AdminContentForm component
+  - [x] 6.2 Create AdminContentForm component
+
+
     - Build form for title, description, type, media_url
     - Validate required fields
     - Insert/update content table records
     - Handle success and error states
     - _Requirements: 5.3_
   
-  - [ ] 6.3 Create AdminContentList component
+  - [x] 6.3 Create AdminContentList component
+
+
     - Fetch and display all content items
     - Show edit and delete buttons for each item
     - Filter by content type (meditation, breathing)
     - _Requirements: 5.5_
   
-  - [ ] 6.4 Add admin route and navigation
+  - [x] 6.4 Add admin route and navigation
+
+
     - Create /admin route protected by role check
     - Add Admin link to navigation for admin users
     - Redirect non-admins to dashboard
     - _Requirements: 5.4_
   
-  - [ ] 6.5 Update Content page to display media from storage
+  - [x] 6.5 Update Content page to display media from storage
+
+
     - Fetch content items with media URLs
     - Render audio player for meditation content
     - Render video player for breathing exercises
