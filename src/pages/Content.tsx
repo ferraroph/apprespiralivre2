@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
 import { Play, Wind, Book, Lock } from "lucide-react";
 import { usePremium } from "@/hooks/usePremium";
 import { Tables } from "@/integrations/supabase/types";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 type Content = Tables<"content">;
 
@@ -30,6 +31,8 @@ const typeTitles = {
 export default function Content() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const { isPremium } = usePremium();
+  const mediaRef = useRef<HTMLAudioElement | HTMLVideoElement | null>(null);
+  const playStartTimeRef = useRef<number | null>(null);
 
   const { data: content, isLoading } = useQuery({
     queryKey: ["content"],
@@ -45,28 +48,62 @@ export default function Content() {
     },
   });
 
-  const handleContentClick = async (item: Content) => {
+  const handleContentClick = (item: Content) => {
     // Check if content is premium and user doesn't have premium
     if (item.is_premium && !isPremium) {
       return;
     }
 
     setSelectedContent(item);
+  };
 
-    // Track content view for analytics
-    try {
-      await supabase.from("analytics_events").insert({
-        event_name: "content_viewed",
-        properties: {
-          content_id: item.id,
-          content_type: item.type,
-          content_title: item.title,
-        },
+  const handleMediaPlay = () => {
+    playStartTimeRef.current = Date.now();
+  };
+
+  const handleMediaPause = useCallback(() => {
+    if (playStartTimeRef.current && selectedContent) {
+      const duration = Math.floor((Date.now() - playStartTimeRef.current) / 1000);
+      
+      // Track content_viewed event with duration
+      trackEvent(AnalyticsEvents.CONTENT_VIEWED, {
+        content_id: selectedContent.id,
+        content_type: selectedContent.type,
+        content_title: selectedContent.title,
+        duration_seconds: duration,
       });
-    } catch (error) {
-      console.error("Failed to track content view:", error);
+      
+      playStartTimeRef.current = null;
+    }
+  }, [selectedContent]);
+
+  const handleMediaEnded = () => {
+    if (playStartTimeRef.current && selectedContent) {
+      const duration = Math.floor((Date.now() - playStartTimeRef.current) / 1000);
+      
+      // Track content_viewed event with full duration
+      trackEvent(AnalyticsEvents.CONTENT_VIEWED, {
+        content_id: selectedContent.id,
+        content_type: selectedContent.type,
+        content_title: selectedContent.title,
+        duration_seconds: duration,
+        completed: true,
+      });
+      
+      playStartTimeRef.current = null;
     }
   };
+
+  // Clean up on dialog close
+  useEffect(() => {
+    if (!selectedContent) {
+      // Track if user was watching when dialog closed
+      if (playStartTimeRef.current) {
+        handleMediaPause();
+      }
+      mediaRef.current = null;
+    }
+  }, [selectedContent, handleMediaPause]);
 
   const groupedContent = content?.reduce((acc, item) => {
     if (!acc[item.type]) {
@@ -179,17 +216,25 @@ export default function Content() {
               <div className="w-full">
                 {selectedContent.type === "meditation" || selectedContent.type === "lesson" ? (
                   <audio
+                    ref={(el) => (mediaRef.current = el)}
                     controls
                     className="w-full"
                     src={selectedContent.media_url}
+                    onPlay={handleMediaPlay}
+                    onPause={handleMediaPause}
+                    onEnded={handleMediaEnded}
                   >
                     Seu navegador não suporta o elemento de áudio.
                   </audio>
                 ) : (
                   <video
+                    ref={(el) => (mediaRef.current = el)}
                     controls
                     className="w-full rounded-lg"
                     src={selectedContent.media_url}
+                    onPlay={handleMediaPlay}
+                    onPause={handleMediaPause}
+                    onEnded={handleMediaEnded}
                   >
                     Seu navegador não suporta o elemento de vídeo.
                   </video>

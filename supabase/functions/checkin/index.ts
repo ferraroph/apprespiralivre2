@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { trackAchievementUnlock } from "../_shared/track-achievement.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -70,11 +71,38 @@ serve(async (req) => {
     const yesterdayStr = yesterday.toISOString().split("T")[0];
 
     let newStreak = 1;
+    let streakLost = false;
+    const previousStreak = progress?.current_streak || 0;
+    
     if (progress?.last_checkin_date === yesterdayStr) {
-      newStreak = (progress.current_streak || 0) + 1;
+      newStreak = previousStreak + 1;
+    } else if (previousStreak > 0 && progress?.last_checkin_date) {
+      // Streak was broken
+      streakLost = true;
     }
 
     const longestStreak = Math.max(newStreak, progress?.longest_streak || 0);
+
+    // Track streak loss
+    if (streakLost) {
+      try {
+        await supabase.functions.invoke("track-event", {
+          body: {
+            events: [{
+              event_name: "streak_lost",
+              user_id: user.id,
+              properties: {
+                previous_streak_count: previousStreak,
+                last_checkin_date: progress?.last_checkin_date,
+              },
+            }],
+          },
+        });
+      } catch (error) {
+        console.error("Error tracking streak loss:", error);
+        // Don't throw - analytics should not break the main flow
+      }
+    }
 
     // Update progress
     const { error: updateError } = await supabase
@@ -92,13 +120,18 @@ serve(async (req) => {
 
     // Check for achievements
     if (newStreak === 7) {
-      await supabase.from("achievements").insert({
+      const achievementData = {
         user_id: user.id,
         achievement_type: "streak_7",
         title: "Uma Semana Livre",
         description: "Completou 7 dias consecutivos",
         icon: "flame",
-      });
+      };
+      
+      await supabase.from("achievements").insert(achievementData);
+      
+      // Track achievement unlock
+      await trackAchievementUnlock(supabase, user.id, "streak_7", "Uma Semana Livre");
     }
 
     return new Response(

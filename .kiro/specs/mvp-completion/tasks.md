@@ -321,37 +321,54 @@
     - Track content views for analytics
     - _Requirements: 5.5_
 
-- [ ] 7. Implement Analytics and Event Tracking
-  - [ ] 7.1 Create track-event Edge Function
+- [x] 7. Implement Analytics and Event Tracking
+
+
+
+
+
+  - [x] 7.1 Create track-event Edge Function
+
+
     - Accept batch of analytics events
     - Validate event structure
     - Store events in analytics_events table
     - Forward to external analytics service (optional)
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
   
-  - [ ] 7.2 Create analytics utility library
+  - [x] 7.2 Create analytics utility library
+
+
     - Implement trackEvent function with batching
     - Use navigator.sendBeacon for reliability
     - Batch events every 30 seconds or 10 events
     - Handle offline scenarios
     - _Requirements: 6.5_
   
-  - [ ] 7.3 Add analytics tracking to check-in flow
+  - [x] 7.3 Add analytics tracking to check-in flow
+
+
     - Track checkin_completed event with streak_count
     - Include cigarettes_avoided in properties
     - _Requirements: 6.1_
   
-  - [ ] 7.4 Add analytics tracking to achievements
+  - [x] 7.4 Add analytics tracking to achievements
+
+
     - Track achievement_unlocked event
     - Include achievement_id and achievement_name
     - _Requirements: 6.2_
   
-  - [ ] 7.5 Add analytics tracking to content viewing
+  - [x] 7.5 Add analytics tracking to content viewing
+
+
     - Track content_viewed event on play
     - Include content_id, content_type, and duration
     - _Requirements: 6.3_
   
-  - [ ] 7.6 Add analytics tracking to streak loss
+  - [x] 7.6 Add analytics tracking to streak loss
+
+
     - Track streak_lost event when streak resets
     - Include previous_streak_count
     - _Requirements: 6.4_

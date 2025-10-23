@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Smile, Meh, Frown } from "lucide-react";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
 interface CheckinDialogProps {
   open: boolean;
@@ -34,6 +35,23 @@ export function CheckinDialog({ open, onOpenChange, onSuccess }: CheckinDialogPr
       });
 
       if (error) throw error;
+
+      // Fetch updated progress to get cigarettes_avoided
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: progressData } = await supabase
+          .from("progress")
+          .select("cigarettes_avoided")
+          .eq("user_id", user.id)
+          .single();
+
+        // Track checkin_completed event
+        trackEvent(AnalyticsEvents.CHECKIN_COMPLETED, {
+          streak_count: data.streak,
+          cigarettes_avoided: progressData?.cigarettes_avoided || 0,
+          mood,
+        });
+      }
 
       toast({
         title: "Check-in realizado!",
