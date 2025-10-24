@@ -40,7 +40,8 @@ export function NotificationPermissionDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="card-premium card-depth max-w-2xl max-h-[90vh] overflow-y-auto">
+      <AlertDialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card text-card-foreground border-border"
+>
         <AlertDialogHeader>
           <AlertDialogTitle className="text-2xl flex items-center gap-2 text-primary">
             <Bell className="h-6 w-6" />

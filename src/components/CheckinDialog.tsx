@@ -75,7 +75,8 @@ export function CheckinDialog({ open, onOpenChange, onSuccess }: CheckinDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="card-premium card-depth">
+      <DialogContent className="sm:max-w-md"
+>
         <DialogHeader>
           <DialogTitle className="text-primary text-glow">Check-in Diário</DialogTitle>
         </DialogHeader>

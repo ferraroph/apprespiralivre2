@@ -34,31 +34,45 @@ export default function CommunityReal() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
+      // First fetch all posts
+      const { data: postsData, error: postsError } = await supabase
         .from("community_posts")
         .select(`
-          *,
-          profiles:user_id (nickname, avatar_url),
-          post_likes (user_id)
+          id,
+          user_id,
+          content,
+          likes_count,
+          created_at,
+          profiles:user_id (nickname, avatar_url)
         `)
         .order("created_at", { ascending: false })
         .limit(20);
 
-      if (error) {
-        console.error("Error fetching posts:", error);
-        throw error;
+      if (postsError) {
+        console.error("Error fetching posts:", postsError);
+        throw postsError;
       }
-      
-      // Filter post_likes to only include current user's likes
-      const postsWithUserLikes = (data || []).map(post => ({
+
+      // Then fetch user's likes for these posts
+      const postIds = (postsData || []).map(p => p.id);
+      const { data: likesData } = await supabase
+        .from("post_likes")
+        .select("post_id")
+        .eq("user_id", user.id)
+        .in("post_id", postIds);
+
+      const likedPostIds = new Set((likesData || []).map(l => l.post_id));
+
+      // Merge data
+      const postsWithLikes = (postsData || []).map(post => ({
         ...post,
-        post_likes: (post.post_likes || []).filter((like: any) => like.user_id === user.id)
+        post_likes: likedPostIds.has(post.id) ? [{ user_id: user.id }] : []
       }));
       
-      return postsWithUserLikes as unknown as Post[];
+      return postsWithLikes as unknown as Post[];
     },
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 30000,
+    refetchOnMount: 'always',
   });
 
   // Get community stats
@@ -83,12 +97,17 @@ export default function CommunityReal() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("community_posts").insert({
-        user_id: user.id,
-        content,
-      });
+      const { data, error } = await supabase
+        .from("community_posts")
+        .insert({
+          user_id: user.id,
+          content,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       setNewPost("");
@@ -100,9 +119,10 @@ export default function CommunityReal() {
       });
     },
     onError: (error: Error) => {
+      console.error("Error creating post:", error);
       toast({
         title: "Erro",
-        description: error.message,
+        description: error.message || "Não foi possível publicar o post",
         variant: "destructive",
       });
     },

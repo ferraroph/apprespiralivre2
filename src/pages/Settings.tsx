@@ -5,22 +5,20 @@ import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { NotificationPermissionDialog } from "@/components/NotificationPermissionDialog";
 
 export default function Settings() {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => {
-    // Check if dark mode is already enabled
     return document.documentElement.classList.contains('dark');
   });
-  const [notifications, setNotifications] = useState(() => {
-    // Check if notifications permission is granted
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      return Notification.permission === 'granted';
-    }
-    return false;
-  });
+  
+  const { permission, requestPermission, unregisterToken, isSupported } = usePushNotifications();
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
 
-  // Apply dark mode when toggle changes
+  const notifications = permission === "granted";
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -33,17 +31,21 @@ export default function Settings() {
 
   const handleNotificationToggle = async (checked: boolean) => {
     if (checked) {
-      // Request notification permission
-      if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          setNotifications(true);
-        } else {
-          setNotifications(false);
-        }
+      if (permission === "denied") {
+        setNotificationDialogOpen(true);
+        return;
+      }
+      try {
+        await requestPermission();
+      } catch (error) {
+        console.error("Error requesting permission:", error);
       }
     } else {
-      setNotifications(false);
+      try {
+        await unregisterToken();
+      } catch (error) {
+        console.error("Error unregistering token:", error);
+      }
     }
   };
 
@@ -65,22 +67,34 @@ export default function Settings() {
           <Bell className="h-5 w-5 text-primary" />
           Notificações
         </h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label htmlFor="notifications">Notificações Push</Label>
-              <p className="text-sm text-muted-foreground">
-                Receba lembretes e atualizações
-              </p>
+        {isSupported ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="notifications">Notificações Push</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receba lembretes e atualizações
+                </p>
+              </div>
+              <Switch
+                id="notifications"
+                checked={notifications}
+                onCheckedChange={handleNotificationToggle}
+              />
             </div>
-            <Switch
-              id="notifications"
-              checked={notifications}
-              onCheckedChange={handleNotificationToggle}
-            />
           </div>
-        </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Notificações não são suportadas neste navegador
+          </p>
+        )}
       </Card>
+
+      <NotificationPermissionDialog
+        open={notificationDialogOpen}
+        onOpenChange={setNotificationDialogOpen}
+        onRequestPermission={requestPermission}
+      />
 
       <Card className="card-premium p-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
