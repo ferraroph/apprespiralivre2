@@ -8,11 +8,12 @@ import { AppLayout } from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Leagues from "./pages/Leagues";
 import Content from "./pages/Content";
-import Community from "./pages/Community";
+import CommunityReal from "./pages/CommunityReal";
 import Profile from "./pages/Profile";
 import Squads from "./pages/Squads";
 import SquadDetailPage from "./pages/SquadDetailPage";
 import Admin from "./pages/Admin";
+import AICoach from "./pages/AICoach";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import Onboarding from "./pages/Onboarding";
@@ -54,9 +55,10 @@ const App = () => (
             <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
             <Route path="/leagues" element={<AppLayout><Leagues /></AppLayout>} />
             <Route path="/content" element={<AppLayout><Content /></AppLayout>} />
-            <Route path="/community" element={<AppLayout><Community /></AppLayout>} />
+            <Route path="/community" element={<AppLayout><CommunityReal /></AppLayout>} />
             <Route path="/squads" element={<AppLayout><Squads /></AppLayout>} />
             <Route path="/squads/:id" element={<AppLayout><SquadDetailPage /></AppLayout>} />
+            <Route path="/ai-coach" element={<AppLayout><AICoach /></AppLayout>} />
             <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
             <Route path="/admin" element={<AppLayout><Admin /></AppLayout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

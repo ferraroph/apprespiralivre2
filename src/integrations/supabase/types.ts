@@ -44,6 +44,30 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       checkins: {
         Row: {
           checkin_date: string
@@ -74,6 +98,30 @@ export type Database = {
           respi_coins_earned?: number | null
           user_id?: string
           xp_earned?: number | null
+        }
+        Relationships: []
+      }
+      community_posts: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          likes_count: number | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          likes_count?: number | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          likes_count?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -121,6 +169,35 @@ export type Database = {
           xp_reward?: number | null
         }
         Relationships: []
+      }
+      post_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -227,89 +304,69 @@ export type Database = {
         }
         Relationships: []
       }
-      purchases: {
+      squad_members: {
         Row: {
-          amount: number
-          created_at: string | null
-          currency: string | null
           id: string
-          product_id: string
-          status: string | null
-          stripe_payment_id: string | null
+          joined_at: string | null
+          role: string | null
+          squad_id: string
           user_id: string
         }
         Insert: {
-          amount: number
-          created_at?: string | null
-          currency?: string | null
           id?: string
-          product_id: string
-          status?: string | null
-          stripe_payment_id?: string | null
+          joined_at?: string | null
+          role?: string | null
+          squad_id: string
           user_id: string
         }
         Update: {
-          amount?: number
-          created_at?: string | null
-          currency?: string | null
           id?: string
-          product_id?: string
-          status?: string | null
-          stripe_payment_id?: string | null
+          joined_at?: string | null
+          role?: string | null
+          squad_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "squad_members_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      chat_messages: {
-        Row: {
-          content: string
-          created_at: string | null
-          id: string
-          role: string
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          id?: string
-          role: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          id?: string
-          role?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_tokens: {
+      squad_messages: {
         Row: {
           created_at: string | null
-          device_type: string | null
-          fcm_token: string
           id: string
-          last_used_at: string | null
+          message: string
+          squad_id: string
           user_id: string
         }
         Insert: {
           created_at?: string | null
-          device_type?: string | null
-          fcm_token: string
           id?: string
-          last_used_at?: string | null
+          message: string
+          squad_id: string
           user_id: string
         }
         Update: {
           created_at?: string | null
-          device_type?: string | null
-          fcm_token?: string
           id?: string
-          last_used_at?: string | null
+          message?: string
+          squad_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "squad_messages_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       squads: {
         Row: {
@@ -341,75 +398,24 @@ export type Database = {
         }
         Relationships: []
       }
-      squad_members: {
-        Row: {
-          id: string
-          joined_at: string | null
-          role: string | null
-          squad_id: string
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          joined_at?: string | null
-          role?: string | null
-          squad_id: string
-          user_id: string
-        }
-        Update: {
-          id?: string
-          joined_at?: string | null
-          role?: string | null
-          squad_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      squad_messages: {
+      user_roles: {
         Row: {
           created_at: string | null
           id: string
-          message: string
-          squad_id: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
-          message: string
-          squad_id: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
-          message?: string
-          squad_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
-        }
-        Relationships: []
-      }
-      analytics_events: {
-        Row: {
-          created_at: string | null
-          event_name: string
-          id: string
-          properties: Json | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          event_name: string
-          id?: string
-          properties?: Json | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          event_name?: string
-          id?: string
-          properties?: Json | null
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -422,9 +428,16 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -551,6 +564,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
