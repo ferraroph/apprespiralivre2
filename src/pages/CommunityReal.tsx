@@ -91,7 +91,7 @@ export default function CommunityReal() {
     },
   });
 
-  // Create post mutation with OPTIMISTIC UPDATE
+  // Create post mutation
   const createPostMutation = useMutation({
     mutationFn: async (content: string) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -103,77 +103,22 @@ export default function CommunityReal() {
           user_id: user.id,
           content,
         })
-        .select(`
-          id,
-          user_id,
-          content,
-          likes_count,
-          created_at,
-          profiles:user_id (nickname, avatar_url)
-        `)
+        .select()
         .single();
 
       if (error) throw error;
       return data;
     },
-    onMutate: async (content) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["community-posts"] });
-
-      // Snapshot previous value
-      const previousPosts = queryClient.getQueryData<Post[]>(["community-posts"]);
-
-      // Optimistically update
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("nickname, avatar_url")
-          .eq("user_id", user.id)
-          .single();
-
-        const optimisticPost: Post = {
-          id: `temp-${Date.now()}`,
-          user_id: user.id,
-          content,
-          likes_count: 0,
-          created_at: new Date().toISOString(),
-          profiles: profile || { nickname: "Você", avatar_url: null },
-          post_likes: [],
-        };
-
-        queryClient.setQueryData<Post[]>(["community-posts"], (old) => 
-          [optimisticPost, ...(old || [])]
-        );
-      }
-
-      return { previousPosts };
-    },
-    onSuccess: (newPost) => {
+    onSuccess: () => {
       setNewPost("");
-      
-      // Replace optimistic post with real one
-      queryClient.setQueryData<Post[]>(["community-posts"], (old) => {
-        if (!old) return [newPost as unknown as Post];
-        return old.map(post => 
-          post.id.startsWith('temp-') ? (newPost as unknown as Post) : post
-        );
-      });
-
-      // Update stats
+      queryClient.invalidateQueries({ queryKey: ["community-posts"] });
       queryClient.invalidateQueries({ queryKey: ["community-stats"] });
-      
       toast({
         title: "Post publicado!",
         description: "Sua mensagem foi compartilhada com a comunidade.",
       });
     },
-    onError: (error: Error, _content, context) => {
-      // Rollback on error
-      if (context?.previousPosts) {
-        queryClient.setQueryData(["community-posts"], context.previousPosts);
-      }
-      
+    onError: (error: Error) => {
       console.error("Error creating post:", error);
       toast({
         title: "Erro",
@@ -183,7 +128,7 @@ export default function CommunityReal() {
     },
   });
 
-  // Toggle like mutation with OPTIMISTIC UPDATE
+  // Toggle like mutation
   const toggleLikeMutation = useMutation({
     mutationFn: async (postId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -206,7 +151,6 @@ export default function CommunityReal() {
           .eq("user_id", user.id);
 
         if (error) throw error;
-        return { action: 'unlike', postId };
       } else {
         // Like
         const { error } = await supabase
@@ -214,50 +158,17 @@ export default function CommunityReal() {
           .insert({ post_id: postId, user_id: user.id });
 
         if (error) throw error;
-        return { action: 'like', postId };
       }
     },
-    onMutate: async (postId) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["community-posts"] });
-
-      // Snapshot
-      const previousPosts = queryClient.getQueryData<Post[]>(["community-posts"]);
-
-      // Optimistically update
-      queryClient.setQueryData<Post[]>(["community-posts"], (old) => {
-        if (!old) return old;
-        
-        return old.map(post => {
-          if (post.id !== postId) return post;
-          
-          const userLiked = post.post_likes.length > 0;
-          
-          return {
-            ...post,
-            likes_count: userLiked ? post.likes_count - 1 : post.likes_count + 1,
-            post_likes: userLiked ? [] : [{ user_id: 'current' }],
-          };
-        });
-      });
-
-      return { previousPosts };
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["community-posts"] });
     },
-    onError: (_error: Error, _postId, context) => {
-      // Rollback
-      if (context?.previousPosts) {
-        queryClient.setQueryData(["community-posts"], context.previousPosts);
-      }
-      
+    onError: (error: Error) => {
       toast({
         title: "Erro",
-        description: "Não foi possível curtir o post",
+        description: error.message,
         variant: "destructive",
       });
-    },
-    onSettled: () => {
-      // Refetch to sync with server (background)
-      queryClient.invalidateQueries({ queryKey: ["community-posts"] });
     },
   });
 

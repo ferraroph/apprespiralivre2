@@ -117,21 +117,11 @@ export function SquadChat({ squadId }: SquadChatProps) {
     try {
       setSending(true);
 
-      const { data, error } = await supabase
-        .from("squad_messages")
-        .insert({
-          squad_id: squadId,
-          user_id: user.id,
-          message: newMessage.trim(),
-        })
-        .select(`
-          *,
-          profiles!squad_messages_user_id_fkey (
-            nickname,
-            avatar_url
-          )
-        `)
-        .single();
+      const { error } = await supabase.from("squad_messages").insert({
+        squad_id: squadId,
+        user_id: user.id,
+        message: newMessage.trim(),
+      });
 
       if (error) throw error;
 

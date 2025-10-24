@@ -28,20 +28,10 @@ if (sentryDsn) {
   });
 }
 
-// Initialize theme - DARK MODE IS DEFAULT
+// Initialize dark mode from localStorage
 const savedTheme = localStorage.getItem('theme');
-if (!savedTheme) {
-  // First time user - set dark mode as default
-  localStorage.setItem('theme', 'dark');
+if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
   document.documentElement.classList.add('dark');
-  document.body.classList.add('dark');
-} else if (savedTheme === 'dark') {
-  document.documentElement.classList.add('dark');
-  document.body.classList.add('dark');
-} else {
-  // Light mode explicitly chosen by user
-  document.documentElement.classList.remove('dark');
-  document.body.classList.remove('dark');
 }
 
 // Register Service Workers
