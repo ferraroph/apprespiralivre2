@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
     nickname: "",
     archetype: "",
@@ -55,13 +55,76 @@ export default function Onboarding() {
     pricePerPack: "",
   });
 
+  useEffect(() => {
+    const checkProfile = async () => {
+      try {
+        console.log("[Onboarding] Starting profile check");
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        console.log("[Onboarding] Session:", session ? "exists" : "null");
+        
+        if (!session) {
+          console.log("[Onboarding] No session, redirecting to /auth");
+          navigate("/auth");
+          return;
+        }
+
+        // Check if user already has a profile
+        console.log("[Onboarding] Checking for existing profile");
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .single();
+
+        console.log("[Onboarding] Profile:", profile ? "exists" : "null", "Error:", profileError);
+
+        if (profile) {
+          // User already completed onboarding
+          console.log("[Onboarding] Profile exists, redirecting to /");
+          navigate("/");
+          return;
+        }
+
+        console.log("[Onboarding] No profile, showing onboarding form");
+        setIsLoading(false);
+      } catch (error) {
+        console.error("[Onboarding] Profile check error:", error);
+        setIsLoading(false);
+      }
+    };
+
+    checkProfile();
+  }, [navigate]);
+
   const handleSubmit = async () => {
     setIsLoading(true);
 
     try {
+      console.log("[Onboarding] Starting profile creation");
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
+      console.log("[Onboarding] User ID:", user.id);
+
+      // Check if profile already exists
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      console.log("[Onboarding] Existing profile check:", existingProfile ? "exists" : "null");
+
+      if (existingProfile) {
+        console.log("[Onboarding] Profile exists, redirecting to /");
+        navigate("/");
+        return;
+      }
+
+      console.log("[Onboarding] Creating new profile");
+      
       // Create profile
       const { error: profileError } = await supabase.from("profiles").insert({
         user_id: user.id,
@@ -74,6 +137,8 @@ export default function Onboarding() {
 
       if (profileError) throw profileError;
 
+      console.log("[Onboarding] Profile created, creating progress");
+
       // Create progress
       const { error: progressError } = await supabase.from("progress").insert({
         user_id: user.id,
@@ -81,22 +146,35 @@ export default function Onboarding() {
 
       if (progressError) throw progressError;
 
+      console.log("[Onboarding] Progress created successfully");
+
       toast({
         title: "Perfil criado!",
         description: "Sua jornada começa agora.",
       });
 
+      console.log("[Onboarding] Redirecting to /");
       navigate("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      console.error("[Onboarding] Error:", errorMessage);
       toast({
         title: "Erro",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -125,13 +203,12 @@ export default function Onboarding() {
                 onChange={(e) =>
                   setFormData({ ...formData, nickname: e.target.value })
                 }
-                disabled={isLoading}
               />
             </div>
             <Button
               className="w-full glow-primary-subtle"
               onClick={() => setStep(2)}
-              disabled={!formData.nickname || isLoading}
+              disabled={!formData.nickname}
             >
               Continuar
             </Button>
@@ -191,7 +268,7 @@ export default function Onboarding() {
               <Button
                 className="flex-1 glow-primary-subtle"
                 onClick={() => setStep(3)}
-                disabled={!formData.archetype || isLoading}
+                disabled={!formData.archetype}
               >
                 Continuar
               </Button>
@@ -215,7 +292,6 @@ export default function Onboarding() {
                       cigarettesPerDay: e.target.value,
                     })
                   }
-                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -229,7 +305,6 @@ export default function Onboarding() {
                   onChange={(e) =>
                     setFormData({ ...formData, pricePerPack: e.target.value })
                   }
-                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -246,15 +321,10 @@ export default function Onboarding() {
                 onClick={handleSubmit}
                 disabled={
                   !formData.cigarettesPerDay ||
-                  !formData.pricePerPack ||
-                  isLoading
+                  !formData.pricePerPack
                 }
               >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Começar Jornada"
-                )}
+                Começar Jornada
               </Button>
             </div>
           </div>

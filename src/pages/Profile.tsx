@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Settings, LogOut, User as UserIcon } from "lucide-react";
+import { Award, Settings, LogOut, User as UserIcon, Crown, Zap, EyeOff, ShoppingBag } from "lucide-react";
+import { PurchaseDialog } from "@/components/PurchaseDialog";
+import { usePremium } from "@/hooks/usePremium";
 
 const achievements = [
   { title: "Primeiro Dia", unlocked: true },
@@ -10,6 +13,19 @@ const achievements = [
 ];
 
 export default function Profile() {
+  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
+  const { isPremium, premiumUntil, streakFreezeCount, adsRemoved, loading } = usePremium();
+
+  const formatPremiumDate = (dateString: string | null) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <Card className="card-premium p-8 text-center animate-slide-up">
@@ -33,6 +49,89 @@ export default function Profile() {
             <p className="text-sm text-muted-foreground">XP Total</p>
           </div>
         </div>
+      </Card>
+
+      {/* Premium Status Card */}
+      <Card className="card-premium p-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <ShoppingBag className="h-6 w-6 text-primary" />
+            Status Premium
+          </h2>
+          <Button
+            onClick={() => setPurchaseDialogOpen(true)}
+            className="glow-primary-subtle"
+            size="sm"
+          >
+            Melhorar
+          </Button>
+        </div>
+
+        {loading ? (
+          <p className="text-muted-foreground text-center py-4">Carregando...</p>
+        ) : (
+          <div className="space-y-4">
+            {/* Premium Subscription */}
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3">
+                <Crown className={`h-5 w-5 ${isPremium ? "text-primary" : "text-muted-foreground"}`} />
+                <div>
+                  <p className="font-semibold">Premium</p>
+                  {isPremium && premiumUntil ? (
+                    <p className="text-xs text-muted-foreground">
+                      Ativo até {formatPremiumDate(premiumUntil)}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Não ativo</p>
+                  )}
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                isPremium
+                  ? "bg-primary/20 text-primary"
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {isPremium ? "Ativo" : "Inativo"}
+              </div>
+            </div>
+
+            {/* Streak Freeze Count */}
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3">
+                <Zap className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-semibold">Congelamentos de Sequência</p>
+                  <p className="text-xs text-muted-foreground">
+                    Use para proteger sua sequência
+                  </p>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-primary">
+                {streakFreezeCount}
+              </div>
+            </div>
+
+            {/* Ads Removed */}
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3">
+                <EyeOff className={`h-5 w-5 ${adsRemoved ? "text-primary" : "text-muted-foreground"}`} />
+                <div>
+                  <p className="font-semibold">Anúncios Removidos</p>
+                  <p className="text-xs text-muted-foreground">
+                    Experiência sem interrupções
+                  </p>
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                adsRemoved
+                  ? "bg-primary/20 text-primary"
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {adsRemoved ? "Ativo" : "Inativo"}
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
       <div className="space-y-4">
@@ -78,6 +177,11 @@ export default function Profile() {
           Sair
         </Button>
       </div>
+
+      <PurchaseDialog
+        open={purchaseDialogOpen}
+        onOpenChange={setPurchaseDialogOpen}
+      />
     </div>
   );
 }

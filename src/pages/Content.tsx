@@ -1,38 +1,126 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Wind, Book } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Play, Wind, Book, Lock } from "lucide-react";
+import { usePremium } from "@/hooks/usePremium";
+import { Tables } from "@/integrations/supabase/types";
+import { trackEvent, AnalyticsEvents } from "@/lib/analytics";
 
-const contentSections = [
-  {
-    title: "Meditações",
-    icon: Play,
-    items: [
-      { title: "Respiração Consciente", duration: "5 min" },
-      { title: "Liberação de Ansiedade", duration: "10 min" },
-      { title: "Força Interior", duration: "7 min" },
-    ],
-  },
-  {
-    title: "Técnicas de Respiração",
-    icon: Wind,
-    items: [
-      { title: "Respiração 4-7-8", duration: "3 min" },
-      { title: "Respiração Quadrada", duration: "5 min" },
-      { title: "Respiração Profunda", duration: "4 min" },
-    ],
-  },
-  {
-    title: "Lições",
-    icon: Book,
-    items: [
-      { title: "Entendendo o Vício", duration: "8 min" },
-      { title: "Gatilhos Emocionais", duration: "6 min" },
-      { title: "Construindo Novos Hábitos", duration: "10 min" },
-    ],
-  },
-];
+type Content = Tables<"content">;
+
+const typeIcons = {
+  meditation: Play,
+  breathing: Wind,
+  lesson: Book,
+};
+
+const typeTitles = {
+  meditation: "Meditações",
+  breathing: "Técnicas de Respiração",
+  lesson: "Lições",
+};
 
 export default function Content() {
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const { isPremium } = usePremium();
+  const mediaRef = useRef<HTMLAudioElement | HTMLVideoElement | null>(null);
+  const playStartTimeRef = useRef<number | null>(null);
+
+  const { data: content, isLoading } = useQuery({
+    queryKey: ["content"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("content")
+        .select("*")
+        .order("order_index", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      return data as Content[];
+    },
+  });
+
+  const handleContentClick = (item: Content) => {
+    // Check if content is premium and user doesn't have premium
+    if (item.is_premium && !isPremium) {
+      return;
+    }
+
+    setSelectedContent(item);
+  };
+
+  const handleMediaPlay = () => {
+    playStartTimeRef.current = Date.now();
+  };
+
+  const handleMediaPause = useCallback(() => {
+    if (playStartTimeRef.current && selectedContent) {
+      const duration = Math.floor((Date.now() - playStartTimeRef.current) / 1000);
+      
+      // Track content_viewed event with duration
+      trackEvent(AnalyticsEvents.CONTENT_VIEWED, {
+        content_id: selectedContent.id,
+        content_type: selectedContent.type,
+        content_title: selectedContent.title,
+        duration_seconds: duration,
+      });
+      
+      playStartTimeRef.current = null;
+    }
+  }, [selectedContent]);
+
+  const handleMediaEnded = () => {
+    if (playStartTimeRef.current && selectedContent) {
+      const duration = Math.floor((Date.now() - playStartTimeRef.current) / 1000);
+      
+      // Track content_viewed event with full duration
+      trackEvent(AnalyticsEvents.CONTENT_VIEWED, {
+        content_id: selectedContent.id,
+        content_type: selectedContent.type,
+        content_title: selectedContent.title,
+        duration_seconds: duration,
+        completed: true,
+      });
+      
+      playStartTimeRef.current = null;
+    }
+  };
+
+  // Clean up on dialog close
+  useEffect(() => {
+    if (!selectedContent) {
+      // Track if user was watching when dialog closed
+      if (playStartTimeRef.current) {
+        handleMediaPause();
+      }
+      mediaRef.current = null;
+    }
+  }, [selectedContent, handleMediaPause]);
+
+  const groupedContent = content?.reduce((acc, item) => {
+    if (!acc[item.type]) {
+      acc[item.type] = [];
+    }
+    acc[item.type].push(item);
+    return acc;
+  }, {} as Record<string, Content[]>);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Carregando conteúdo...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="text-center space-y-2">
@@ -45,50 +133,122 @@ export default function Content() {
       </div>
 
       <div className="space-y-8">
-        {contentSections.map((section, sectionIndex) => {
-          const Icon = section.icon;
-          
+        {Object.entries(groupedContent || {}).map(([type, items], sectionIndex) => {
+          const Icon = typeIcons[type as keyof typeof typeIcons] || Play;
+          const title = typeTitles[type as keyof typeof typeTitles] || type;
+
           return (
             <div
-              key={section.title}
+              key={type}
               className="space-y-4 animate-slide-up"
               style={{ animationDelay: `${sectionIndex * 0.1}s` }}
             >
               <div className="flex items-center gap-3">
                 <Icon className="h-6 w-6 text-primary" />
-                <h2 className="text-2xl font-bold">{section.title}</h2>
+                <h2 className="text-2xl font-bold">{title}</h2>
               </div>
-              
+
               <div className="grid gap-4">
-                {section.items.map((item, itemIndex) => (
-                  <Card
-                    key={item.title}
-                    className="card-premium p-4 animate-scale-in"
-                    style={{
-                      animationDelay: `${(sectionIndex * 0.3 + itemIndex * 0.1)}s`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {item.duration}
-                        </p>
+                {items.map((item, itemIndex) => {
+                  const isLocked = item.is_premium && !isPremium;
+
+                  return (
+                    <Card
+                      key={item.id}
+                      className="card-premium p-4 animate-scale-in cursor-pointer hover:scale-[1.02] transition-transform"
+                      style={{
+                        animationDelay: `${(sectionIndex * 0.3 + itemIndex * 0.1)}s`,
+                      }}
+                      onClick={() => handleContentClick(item)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{item.title}</h3>
+                            {isLocked && (
+                              <Lock className="h-4 w-4 text-primary" />
+                            )}
+                          </div>
+                          {item.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                              {item.description}
+                            </p>
+                          )}
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {item.duration_minutes ? `${item.duration_minutes} min` : ""}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground glow-primary"
+                          disabled={isLocked}
+                        >
+                          {isLocked ? <Lock className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground glow-primary"
-                      >
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           );
         })}
+
+        {(!content || content.length === 0) && (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">
+              Nenhum conteúdo disponível no momento.
+            </p>
+          </Card>
+        )}
       </div>
+
+      <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedContent?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedContent?.description && (
+              <p className="text-muted-foreground">{selectedContent.description}</p>
+            )}
+            {selectedContent?.media_url && (
+              <div className="w-full">
+                {selectedContent.type === "meditation" || selectedContent.type === "lesson" ? (
+                  <audio
+                    ref={(el) => (mediaRef.current = el)}
+                    controls
+                    className="w-full"
+                    src={selectedContent.media_url}
+                    onPlay={handleMediaPlay}
+                    onPause={handleMediaPause}
+                    onEnded={handleMediaEnded}
+                  >
+                    Seu navegador não suporta o elemento de áudio.
+                  </audio>
+                ) : (
+                  <video
+                    ref={(el) => (mediaRef.current = el)}
+                    controls
+                    className="w-full rounded-lg"
+                    src={selectedContent.media_url}
+                    onPlay={handleMediaPlay}
+                    onPause={handleMediaPause}
+                    onEnded={handleMediaEnded}
+                  >
+                    Seu navegador não suporta o elemento de vídeo.
+                  </video>
+                )}
+              </div>
+            )}
+            {!selectedContent?.media_url && (
+              <p className="text-center text-muted-foreground py-8">
+                Mídia não disponível para este conteúdo.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
