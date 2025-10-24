@@ -66,7 +66,6 @@ serve(async (req) => {
     // Check for cron secret (for automated jobs)
     if (cronSecret && cronSecretHeader === cronSecret) {
       isAuthorized = true;
-      console.log("Authorized via cron secret");
     } 
     // Check for admin JWT token
     else if (authHeader) {
@@ -98,7 +97,6 @@ serve(async (req) => {
       }
       
       isAuthorized = true;
-      console.log(`Authorized admin user: ${user.id}`);
     }
     
     if (!isAuthorized) {
@@ -344,7 +342,6 @@ async function sendNotificationToUser(
   }
 
   if (!tokens || tokens.length === 0) {
-    console.log(`No FCM tokens found for user ${userId}`);
     return;
   }
 
@@ -411,7 +408,5 @@ async function sendNotificationToUser(
       .from("user_tokens")
       .delete()
       .in("id", expiredTokenIds);
-    
-    console.log(`Cleaned up ${expiredTokenIds.length} expired tokens for user ${userId}`);
   }
 }
