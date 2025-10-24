@@ -100,12 +100,12 @@ export function usePushNotifications() {
 
       // Firebase config for Respira Livre project
       const firebaseConfig: FirebaseConfig = {
-        apiKey: "AIzaSyDKxT8vQnLZs6_jX4oP5tMfFyH3R1zYeQk", // You'll need to get this from Firebase Console
+        apiKey: "AIzaSyACOI010Z8GPcFqpWbTdtmpzZH8fndrjRk",
         authDomain: "respira-livre-app.firebaseapp.com",
         projectId: "respira-livre-app",
         storageBucket: "respira-livre-app.firebasestorage.app",
-        messagingSenderId: "112970640777189995893",
-        appId: "1:112970640777189995893:web:YOUR_APP_ID", // You'll need to get this from Firebase Console
+        messagingSenderId: "286074518251",
+        appId: "1:286074518251:web:a1da10d773c5dcc1045cae",
       };
 
       // Initialize Firebase if not already initialized
