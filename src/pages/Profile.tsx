@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Settings, LogOut, User as UserIcon, Crown, Zap, EyeOff, ShoppingBag } from "lucide-react";
+import { Award, Settings, LogOut, User as UserIcon, Crown, Zap, EyeOff, ShoppingBag, Bell, BellOff } from "lucide-react";
 import { PurchaseDialog } from "@/components/PurchaseDialog";
 import { usePremium } from "@/hooks/usePremium";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const achievements = [
   { title: "Primeiro Dia", unlocked: true },
@@ -15,6 +16,13 @@ const achievements = [
 export default function Profile() {
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
   const { isPremium, premiumUntil, streakFreezeCount, adsRemoved, loading } = usePremium();
+  const { 
+    permission, 
+    loading: notificationLoading, 
+    requestPermission, 
+    unregisterToken,
+    isSupported 
+  } = usePushNotifications();
 
   const formatPremiumDate = (dateString: string | null) => {
     if (!dateString) return null;
@@ -133,6 +141,50 @@ export default function Profile() {
           </div>
         )}
       </Card>
+
+      {/* Notifications Card */}
+      {isSupported && (
+        <Card className="card-premium p-6 animate-slide-up" style={{ animationDelay: "0.2s" }}>
+          <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+            <Bell className="h-6 w-6 text-primary" />
+            Notificações Push
+          </h2>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3">
+                {permission === "granted" ? (
+                  <Bell className="h-5 w-5 text-primary" />
+                ) : (
+                  <BellOff className="h-5 w-5 text-muted-foreground" />
+                )}
+                <div>
+                  <p className="font-semibold">Notificações Push</p>
+                  <p className="text-xs text-muted-foreground">
+                    {permission === "granted" 
+                      ? "Receba lembretes e atualizações importantes"
+                      : "Ative para receber notificações"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={permission === "granted" ? unregisterToken : requestPermission}
+                disabled={notificationLoading}
+                variant={permission === "granted" ? "outline" : "default"}
+                size="sm"
+              >
+                {notificationLoading ? "..." : permission === "granted" ? "Desativar" : "Ativar"}
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>• Lembretes diários de check-in</p>
+              <p>• Alertas quando sua sequência estiver em risco</p>
+              <p>• Notificações de conquistas desbloqueadas</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="space-y-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
