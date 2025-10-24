@@ -98,14 +98,14 @@ export function usePushNotifications() {
         await loadFirebaseScripts();
       }
 
-      // Get Firebase config from environment or use placeholder
+      // Firebase config for Respira Livre project
       const firebaseConfig: FirebaseConfig = {
-        apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
-        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_AUTH_DOMAIN",
-        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_STORAGE_BUCKET",
-        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
-        appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID",
+        apiKey: "AIzaSyDKxT8vQnLZs6_jX4oP5tMfFyH3R1zYeQk", // You'll need to get this from Firebase Console
+        authDomain: "respira-livre-app.firebaseapp.com",
+        projectId: "respira-livre-app",
+        storageBucket: "respira-livre-app.firebasestorage.app",
+        messagingSenderId: "112970640777189995893",
+        appId: "1:112970640777189995893:web:YOUR_APP_ID", // You'll need to get this from Firebase Console
       };
 
       // Initialize Firebase if not already initialized
@@ -116,9 +116,9 @@ export function usePushNotifications() {
       // Get messaging instance
       const messaging = window.firebase.messaging();
 
-      // Get FCM token
+      // Get FCM token with VAPID key
       const token = await messaging.getToken({
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        vapidKey: "BBZECELz5cEi4RagXJH6p6L2Mpp0kGNzm5hYpvtXz7t_-rcJIGshxfirZ6GjuzMwP-p1YRHOvLmBUjC9ZClWDHo",
       });
 
       // Handle foreground messages
