@@ -4,12 +4,26 @@ import { ArrowLeft, Bell, Moon, Sun, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Check if dark mode is already enabled
+    return document.documentElement.classList.contains('dark');
+  });
   const [notifications, setNotifications] = useState(true);
+
+  // Apply dark mode when toggle changes
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   return (
     <div className="space-y-6 animate-fade-in">

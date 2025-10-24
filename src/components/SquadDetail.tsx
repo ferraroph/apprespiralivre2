@@ -67,19 +67,33 @@ export function SquadDetail() {
         .from("squad_members")
         .select(`
           *,
-          profiles!squad_members_user_id_fkey (
+          profiles:user_id (
             nickname,
             avatar_url
-          ),
-          progress!progress_user_id_fkey (
-            current_streak
           )
         `)
         .eq("squad_id", id)
         .order("joined_at", { ascending: true });
 
       if (membersError) throw membersError;
-      setMembers((membersData as any) || []);
+
+      // Fetch progress for each member separately
+      const membersWithProgress = await Promise.all(
+        (membersData || []).map(async (member: any) => {
+          const { data: progressData } = await supabase
+            .from("progress")
+            .select("current_streak")
+            .eq("user_id", member.user_id)
+            .single();
+
+          return {
+            ...member,
+            progress: progressData || { current_streak: 0 }
+          };
+        })
+      );
+
+      setMembers(membersWithProgress as any);
     } catch (error) {
       console.error("Error fetching squad details:", error);
       toast({

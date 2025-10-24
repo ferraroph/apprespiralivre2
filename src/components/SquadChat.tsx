@@ -15,7 +15,7 @@ interface Message {
   message: string;
   created_at: string;
   profiles: {
-    name: string;
+    nickname: string;
     avatar_url: string | null;
   };
 }
@@ -51,8 +51,8 @@ export function SquadChat({ squadId }: SquadChatProps) {
         .from("squad_messages")
         .select(`
           *,
-          profiles:user_id (
-            name,
+          profiles!squad_messages_user_id_fkey (
+            nickname,
             avatar_url
           )
         `)
@@ -89,8 +89,8 @@ export function SquadChat({ squadId }: SquadChatProps) {
             .from("squad_messages")
             .select(`
               *,
-              profiles:user_id (
-                name,
+              profiles!squad_messages_user_id_fkey (
+                nickname,
                 avatar_url
               )
             `)
@@ -163,7 +163,7 @@ export function SquadChat({ squadId }: SquadChatProps) {
                 <Avatar className="h-10 w-10 flex-shrink-0">
                   <AvatarImage src={message.profiles?.avatar_url || undefined} />
                   <AvatarFallback>
-                    {message.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                    {message.profiles?.nickname?.charAt(0).toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div
@@ -172,7 +172,7 @@ export function SquadChat({ squadId }: SquadChatProps) {
                   } max-w-[70%]`}
                 >
                   <p className="text-xs text-muted-foreground mb-1">
-                    {message.profiles?.name}
+                    {message.profiles?.nickname}
                   </p>
                   <div
                     className={`rounded-lg px-4 py-2 ${

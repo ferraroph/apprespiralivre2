@@ -38,15 +38,27 @@ export default function CommunityReal() {
         .from("community_posts")
         .select(`
           *,
-          profiles!community_posts_user_id_fkey (nickname, avatar_url),
-          post_likes!post_likes_post_id_fkey (user_id)
+          profiles:user_id (nickname, avatar_url),
+          post_likes (user_id)
         `)
         .order("created_at", { ascending: false })
         .limit(20);
 
-      if (error) throw error;
-      return data as unknown as Post[];
+      if (error) {
+        console.error("Error fetching posts:", error);
+        throw error;
+      }
+      
+      // Filter post_likes to only include current user's likes
+      const postsWithUserLikes = (data || []).map(post => ({
+        ...post,
+        post_likes: (post.post_likes || []).filter((like: any) => like.user_id === user.id)
+      }));
+      
+      return postsWithUserLikes as unknown as Post[];
     },
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Get community stats

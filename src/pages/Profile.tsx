@@ -32,11 +32,16 @@ export default function Profile() {
     isSupported 
   } = usePushNotifications();
 
-  const handleNotificationRequest = () => {
+  const handleNotificationRequest = async () => {
     if (permission === "denied") {
       setNotificationDialogOpen(true);
-    } else {
-      requestPermission();
+      return;
+    }
+    
+    try {
+      await requestPermission();
+    } catch (error) {
+      console.error("Error requesting permission:", error);
     }
   };
 
