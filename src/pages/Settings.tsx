@@ -12,7 +12,13 @@ export default function Settings() {
     // Check if dark mode is already enabled
     return document.documentElement.classList.contains('dark');
   });
-  const [notifications, setNotifications] = useState(true);
+  const [notifications, setNotifications] = useState(() => {
+    // Check if notifications permission is granted
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission === 'granted';
+    }
+    return false;
+  });
 
   // Apply dark mode when toggle changes
   useEffect(() => {
@@ -24,6 +30,22 @@ export default function Settings() {
       localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
+
+  const handleNotificationToggle = async (checked: boolean) => {
+    if (checked) {
+      // Request notification permission
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          setNotifications(true);
+        } else {
+          setNotifications(false);
+        }
+      }
+    } else {
+      setNotifications(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -54,7 +76,7 @@ export default function Settings() {
             <Switch
               id="notifications"
               checked={notifications}
-              onCheckedChange={setNotifications}
+              onCheckedChange={handleNotificationToggle}
             />
           </div>
         </div>

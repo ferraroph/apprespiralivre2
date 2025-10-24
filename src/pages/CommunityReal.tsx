@@ -159,8 +159,16 @@ export default function CommunityReal() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6 animate-fade-in">
+        <div className="text-center space-y-2">
+          <div className="h-9 w-48 bg-muted rounded mx-auto animate-pulse" />
+          <div className="h-5 w-64 bg-muted rounded mx-auto animate-pulse" />
+        </div>
+        <div className="h-32 bg-muted rounded animate-pulse" />
+        <div className="h-48 bg-muted rounded animate-pulse" />
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-40 bg-muted rounded animate-pulse" />
+        ))}
       </div>
     );
   }
