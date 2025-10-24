@@ -49,12 +49,67 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const firebaseServiceAccount = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+    const cronSecret = Deno.env.get("CRON_SECRET");
     
     if (!firebaseServiceAccount) {
       throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Check authorization - either valid cron secret OR admin user
+    const authHeader = req.headers.get("Authorization");
+    const cronSecretHeader = req.headers.get("x-cron-secret");
+    
+    let isAuthorized = false;
+    
+    // Check for cron secret (for automated jobs)
+    if (cronSecret && cronSecretHeader === cronSecret) {
+      isAuthorized = true;
+      console.log("Authorized via cron secret");
+    } 
+    // Check for admin JWT token
+    else if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError || !user) {
+        return createErrorResponse(
+          "Não autorizado",
+          ErrorCodes.UNAUTHORIZED,
+          401,
+          undefined,
+          corsHeaders
+        );
+      }
+      
+      // Check if user has admin role
+      const { data: hasAdminRole, error: roleError } = await supabase
+        .rpc("has_role", { _user_id: user.id, _role: "admin" });
+      
+      if (roleError || !hasAdminRole) {
+        return createErrorResponse(
+          "Acesso negado. Apenas administradores podem enviar notificações",
+          ErrorCodes.UNAUTHORIZED,
+          403,
+          undefined,
+          corsHeaders
+        );
+      }
+      
+      isAuthorized = true;
+      console.log(`Authorized admin user: ${user.id}`);
+    }
+    
+    if (!isAuthorized) {
+      return createErrorResponse(
+        "Autorização necessária. Use token de admin ou secret de cron",
+        ErrorCodes.UNAUTHORIZED,
+        401,
+        undefined,
+        corsHeaders
+      );
+    }
 
     // Validate request
     const body: NotificationRequest = await req.json();
