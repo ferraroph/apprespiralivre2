@@ -61,7 +61,7 @@ export function SquadChat({ squadId }: SquadChatProps) {
         .limit(100);
 
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data as any) || []);
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast({
@@ -98,7 +98,7 @@ export function SquadChat({ squadId }: SquadChatProps) {
             .single();
 
           if (!error && data) {
-            setMessages((prev) => [...prev, data]);
+            setMessages((prev) => [...prev, data as any]);
           }
         }
       )

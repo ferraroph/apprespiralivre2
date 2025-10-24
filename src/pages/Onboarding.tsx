@@ -58,29 +58,38 @@ export default function Onboarding() {
   useEffect(() => {
     const checkProfile = async () => {
       try {
+        console.log("[Onboarding] Starting profile check");
         const { data: { session } } = await supabase.auth.getSession();
         
+        console.log("[Onboarding] Session:", session ? "exists" : "null");
+        
         if (!session) {
+          console.log("[Onboarding] No session, redirecting to /auth");
           navigate("/auth");
           return;
         }
 
         // Check if user already has a profile
-        const { data: profile } = await supabase
+        console.log("[Onboarding] Checking for existing profile");
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("user_id", session.user.id)
           .single();
 
+        console.log("[Onboarding] Profile:", profile ? "exists" : "null", "Error:", profileError);
+
         if (profile) {
           // User already completed onboarding
+          console.log("[Onboarding] Profile exists, redirecting to /");
           navigate("/");
           return;
         }
 
+        console.log("[Onboarding] No profile, showing onboarding form");
         setIsLoading(false);
       } catch (error) {
-        console.error("Profile check error:", error);
+        console.error("[Onboarding] Profile check error:", error);
         setIsLoading(false);
       }
     };
@@ -92,8 +101,12 @@ export default function Onboarding() {
     setIsLoading(true);
 
     try {
+      console.log("[Onboarding] Starting profile creation");
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
+
+      console.log("[Onboarding] User ID:", user.id);
 
       // Check if profile already exists
       const { data: existingProfile } = await supabase
@@ -102,11 +115,16 @@ export default function Onboarding() {
         .eq("user_id", user.id)
         .single();
 
+      console.log("[Onboarding] Existing profile check:", existingProfile ? "exists" : "null");
+
       if (existingProfile) {
+        console.log("[Onboarding] Profile exists, redirecting to /");
         navigate("/");
         return;
       }
 
+      console.log("[Onboarding] Creating new profile");
+      
       // Create profile
       const { error: profileError } = await supabase.from("profiles").insert({
         user_id: user.id,
@@ -119,6 +137,8 @@ export default function Onboarding() {
 
       if (profileError) throw profileError;
 
+      console.log("[Onboarding] Profile created, creating progress");
+
       // Create progress
       const { error: progressError } = await supabase.from("progress").insert({
         user_id: user.id,
@@ -126,16 +146,21 @@ export default function Onboarding() {
 
       if (progressError) throw progressError;
 
+      console.log("[Onboarding] Progress created successfully");
+
       toast({
         title: "Perfil criado!",
         description: "Sua jornada começa agora.",
       });
 
+      console.log("[Onboarding] Redirecting to /");
       navigate("/");
     } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      console.error("[Onboarding] Error:", errorMessage);
       toast({
         title: "Erro",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

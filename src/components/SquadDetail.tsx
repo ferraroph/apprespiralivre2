@@ -79,7 +79,7 @@ export function SquadDetail() {
         .order("joined_at", { ascending: true });
 
       if (membersError) throw membersError;
-      setMembers(membersData || []);
+      setMembers((membersData as any) || []);
     } catch (error) {
       console.error("Error fetching squad details:", error);
       toast({

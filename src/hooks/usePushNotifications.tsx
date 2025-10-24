@@ -222,7 +222,7 @@ export function usePushNotifications() {
 
     try {
       const { error } = await supabase
-        .from("user_tokens" as unknown)
+        .from("user_tokens" as any)
         .delete()
         .eq("fcm_token", fcmToken)
         .eq("user_id", user.id);
