@@ -34,6 +34,15 @@ export function usePushNotifications() {
     }
   }, []);
 
+  // Check if running in iframe
+  const isInIframe = () => {
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true;
+    }
+  };
+
   // Request notification permission and register FCM token
   const requestPermission = async () => {
     console.log("[Push Notifications] Starting requestPermission");
@@ -42,6 +51,17 @@ export function usePushNotifications() {
       console.error("[Push Notifications] Browser does not support notifications");
       setError("This browser does not support notifications");
       toast.error("Notificações não são suportadas neste navegador");
+      return false;
+    }
+
+    // Check if in iframe
+    if (isInIframe()) {
+      console.warn("[Push Notifications] Running in iframe, notifications may be blocked");
+      setError("Notifications blocked in preview mode");
+      toast.error("Notificações não funcionam no modo de visualização. Abra o app em uma nova aba para ativar as notificações.", {
+        duration: 8000,
+      });
+      setLoading(false);
       return false;
     }
 
@@ -57,6 +77,17 @@ export function usePushNotifications() {
     setError(null);
 
     try {
+      // Check if permission was previously denied
+      if (Notification.permission === "denied") {
+        console.warn("[Push Notifications] Permission was previously denied");
+        setError("Notification permission denied");
+        toast.error("Notificações foram bloqueadas. Por favor, habilite nas configurações do navegador.", {
+          duration: 8000,
+        });
+        setLoading(false);
+        return false;
+      }
+
       // Request permission
       console.log("[Push Notifications] Requesting permission...");
       const permission = await Notification.requestPermission();

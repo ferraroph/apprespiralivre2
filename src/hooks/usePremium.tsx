@@ -37,7 +37,7 @@ export function usePremium(): PremiumStatus {
         const { data: profile, error } = await supabase
           .from("profiles")
           .select("premium_until, streak_freeze_count, ads_removed")
-          .eq("id", user.id)
+          .eq("user_id", user.id)
           .single();
 
         if (error) throw error;
@@ -77,7 +77,7 @@ export function usePremium(): PremiumStatus {
           event: "UPDATE",
           schema: "public",
           table: "profiles",
-          filter: `id=eq.${user.id}`,
+          filter: `user_id=eq.${user.id}`,
         },
         () => {
           fetchPremiumStatus();

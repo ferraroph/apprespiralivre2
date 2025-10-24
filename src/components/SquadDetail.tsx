@@ -24,7 +24,7 @@ interface SquadMember {
   role: "leader" | "member";
   joined_at: string;
   profiles: {
-    name: string;
+    nickname: string;
     avatar_url: string | null;
   };
   progress: {
@@ -67,11 +67,11 @@ export function SquadDetail() {
         .from("squad_members")
         .select(`
           *,
-          profiles:user_id (
-            name,
+          profiles!squad_members_user_id_fkey (
+            nickname,
             avatar_url
           ),
-          progress:user_id (
+          progress!progress_user_id_fkey (
             current_streak
           )
         `)
@@ -222,7 +222,7 @@ export function SquadDetail() {
             <div>
               <p className="text-sm text-muted-foreground">Líder</p>
               <p className="text-lg font-bold text-primary">
-                {members.find((m) => m.role === "leader")?.profiles?.name || "N/A"}
+                {members.find((m) => m.role === "leader")?.profiles?.nickname || "N/A"}
               </p>
             </div>
           </div>
@@ -246,12 +246,12 @@ export function SquadDetail() {
               <Avatar className="h-12 w-12">
                 <AvatarImage src={member.profiles?.avatar_url || undefined} />
                 <AvatarFallback>
-                  {member.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                  {member.profiles?.nickname?.charAt(0).toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold">{member.profiles?.name}</p>
+                  <p className="font-semibold">{member.profiles?.nickname}</p>
                   {member.role === "leader" && (
                     <Crown className="h-4 w-4 text-primary" />
                   )}

@@ -19,7 +19,7 @@ interface Post {
     nickname: string;
     avatar_url: string | null;
   };
-  user_likes: { user_id: string }[];
+  post_likes: { user_id: string }[];
 }
 
 export default function CommunityReal() {
@@ -38,8 +38,8 @@ export default function CommunityReal() {
         .from("community_posts")
         .select(`
           *,
-          profiles:user_id (nickname, avatar_url),
-          user_likes:post_likes(user_id)
+          profiles!community_posts_user_id_fkey (nickname, avatar_url),
+          post_likes!post_likes_post_id_fkey (user_id)
         `)
         .order("created_at", { ascending: false })
         .limit(20);
@@ -213,7 +213,7 @@ export default function CommunityReal() {
       {/* Posts list */}
       <div className="space-y-4">
         {posts?.map((post, index) => {
-          const userLiked = post.user_likes.length > 0;
+          const userLiked = post.post_likes.length > 0;
           
           return (
             <Card
