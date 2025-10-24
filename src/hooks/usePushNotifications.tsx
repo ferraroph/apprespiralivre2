@@ -36,27 +36,35 @@ export function usePushNotifications() {
 
   // Request notification permission and register FCM token
   const requestPermission = async () => {
+    console.log("[Push Notifications] Starting requestPermission");
+    
     if (!("Notification" in window)) {
+      console.error("[Push Notifications] Browser does not support notifications");
       setError("This browser does not support notifications");
       toast.error("Notificações não são suportadas neste navegador");
       return false;
     }
 
     if (!user) {
+      console.error("[Push Notifications] User not authenticated");
       setError("User must be authenticated");
       toast.error("Você precisa estar autenticado");
       return false;
     }
 
+    console.log("[Push Notifications] Current permission:", Notification.permission);
     setLoading(true);
     setError(null);
 
     try {
       // Request permission
+      console.log("[Push Notifications] Requesting permission...");
       const permission = await Notification.requestPermission();
+      console.log("[Push Notifications] Permission result:", permission);
       setPermission(permission);
 
       if (permission !== "granted") {
+        console.warn("[Push Notifications] Permission denied by user");
         setError("Notification permission denied");
         toast.error("Permissão de notificação negada");
         setLoading(false);
@@ -64,7 +72,9 @@ export function usePushNotifications() {
       }
 
       // Initialize Firebase and get FCM token
+      console.log("[Push Notifications] Initializing Firebase...");
       const token = await initializeFirebaseAndGetToken();
+      console.log("[Push Notifications] FCM token:", token ? "obtained" : "failed");
       
       if (!token) {
         throw new Error("Failed to get FCM token");
@@ -73,17 +83,19 @@ export function usePushNotifications() {
       setFcmToken(token);
 
       // Register token with backend
+      console.log("[Push Notifications] Registering token with backend...");
       await registerTokenWithBackend(token);
+      console.log("[Push Notifications] Token registered successfully");
 
       toast.success("Notificações ativadas com sucesso!");
       setLoading(false);
       return true;
 
     } catch (err) {
-      console.error("Error requesting notification permission:", err);
+      console.error("[Push Notifications] Error:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to enable notifications";
       setError(errorMessage);
-      toast.error("Erro ao ativar notificações");
+      toast.error("Erro ao ativar notificações: " + errorMessage);
       setLoading(false);
       return false;
     }
@@ -92,9 +104,29 @@ export function usePushNotifications() {
   // Initialize Firebase and get FCM token
   const initializeFirebaseAndGetToken = async (): Promise<string | null> => {
     try {
+      console.log("[Firebase] Starting initialization");
+      
+      // Register service worker first
+      if ('serviceWorker' in navigator) {
+        console.log("[Firebase] Registering service worker...");
+        try {
+          const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          console.log("[Firebase] Service worker registered:", registration);
+          
+          // Wait for service worker to be ready
+          await navigator.serviceWorker.ready;
+          console.log("[Firebase] Service worker is ready");
+        } catch (swError) {
+          console.error("[Firebase] Service worker registration failed:", swError);
+          throw new Error("Failed to register service worker: " + swError);
+        }
+      } else {
+        console.warn("[Firebase] Service workers not supported");
+      }
+      
       // Check if Firebase is loaded
       if (!window.firebase) {
-        // Dynamically load Firebase scripts
+        console.log("[Firebase] Scripts not loaded, loading now...");
         await loadFirebaseScripts();
       }
 
@@ -108,22 +140,31 @@ export function usePushNotifications() {
         appId: "1:286074518251:web:a1da10d773c5dcc1045cae",
       };
 
+      console.log("[Firebase] Config loaded");
+
       // Initialize Firebase if not already initialized
       if (!window.firebase.apps?.length) {
+        console.log("[Firebase] Initializing app...");
         window.firebase.initializeApp(firebaseConfig);
+      } else {
+        console.log("[Firebase] App already initialized");
       }
 
       // Get messaging instance
+      console.log("[Firebase] Getting messaging instance...");
       const messaging = window.firebase.messaging();
 
       // Get FCM token with VAPID key
+      console.log("[Firebase] Requesting FCM token with VAPID key...");
       const token = await messaging.getToken({
         vapidKey: "BBZECELz5cEi4RagXJH6p6L2Mpp0kGNzm5hYpvtXz7t_-rcJIGshxfirZ6GjuzMwP-p1YRHOvLmBUjC9ZClWDHo",
       });
 
+      console.log("[Firebase] FCM token obtained successfully");
+
       // Handle foreground messages
       messaging.onMessage((payload: any) => {
-        console.log("Foreground message received:", payload);
+        console.log("[Firebase] Foreground message received:", payload);
         
         // Show toast notification
         const title = payload.notification?.title || "Respira Livre";
@@ -138,7 +179,7 @@ export function usePushNotifications() {
       return token;
 
     } catch (err) {
-      console.error("Error initializing Firebase:", err);
+      console.error("[Firebase] Error initializing:", err);
       return null;
     }
   };
