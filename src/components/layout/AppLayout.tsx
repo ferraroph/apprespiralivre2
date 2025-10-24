@@ -17,6 +17,16 @@ export function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Check if we're processing OAuth callback (hash fragment present)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const isOAuthCallback = hashParams.has('access_token') || hashParams.has('error');
+        
+        if (isOAuthCallback) {
+          // Let Supabase process the OAuth callback first
+          setIsLoading(true);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for Supabase to process
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
@@ -51,6 +61,19 @@ export function AppLayout({ children }: AppLayoutProps) {
       async (event, session) => {
         if (!session) {
           navigate("/auth");
+        } else if (event === 'SIGNED_IN') {
+          // User just signed in, check profile
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .single();
+
+          if (profile) {
+            setIsAuthenticated(true);
+          } else {
+            navigate("/onboarding");
+          }
         }
       }
     );
