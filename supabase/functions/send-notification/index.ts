@@ -136,7 +136,7 @@ async function getAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   
   const header = {
-    alg: "RS256",
+    alg: "RS256" as const,
     typ: "JWT",
   };
   
@@ -271,7 +271,7 @@ async function sendAchievementNotification(supabase: any, userId: string, achiev
 }
 
 async function sendNotificationToUser(
-  supabase: unknown,
+  supabase: any,
   userId: string,
   title: string,
   body: string,
