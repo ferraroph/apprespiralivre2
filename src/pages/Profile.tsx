@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Award, Settings, LogOut, User as UserIcon, Crown, Zap, EyeOff, ShoppingBag, Bell, BellOff } from "lucide-react";
 import { PurchaseDialog } from "@/components/PurchaseDialog";
+import { NotificationPermissionDialog } from "@/components/NotificationPermissionDialog";
 import { usePremium } from "@/hooks/usePremium";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const achievements = [
   { title: "Primeiro Dia", unlocked: true },
@@ -14,7 +18,11 @@ const achievements = [
 ];
 
 export default function Profile() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { signOut } = useAuth();
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const { isPremium, premiumUntil, streakFreezeCount, adsRemoved, loading } = usePremium();
   const { 
     permission, 
@@ -23,6 +31,31 @@ export default function Profile() {
     unregisterToken,
     isSupported 
   } = usePushNotifications();
+
+  const handleNotificationRequest = () => {
+    if (permission === "denied") {
+      setNotificationDialogOpen(true);
+    } else {
+      requestPermission();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Desconectado",
+        description: "Você saiu da sua conta com sucesso",
+      });
+      navigate("/auth");
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível sair da conta",
+        variant: "destructive",
+      });
+    }
+  };
 
   const formatPremiumDate = (dateString: string | null) => {
     if (!dateString) return null;
@@ -168,7 +201,7 @@ export default function Profile() {
                 </div>
               </div>
               <Button
-                onClick={permission === "granted" ? unregisterToken : requestPermission}
+                onClick={permission === "granted" ? unregisterToken : handleNotificationRequest}
                 disabled={notificationLoading}
                 variant={permission === "granted" ? "outline" : "default"}
                 size="sm"
@@ -216,6 +249,7 @@ export default function Profile() {
         <Button
           variant="outline"
           className="w-full justify-start gap-3 border-primary/30 hover:bg-primary/10 hover:border-primary"
+          onClick={() => navigate("/settings")}
         >
           <Settings className="h-5 w-5" />
           Configurações
@@ -224,6 +258,7 @@ export default function Profile() {
         <Button
           variant="outline"
           className="w-full justify-start gap-3 border-destructive/30 hover:bg-destructive/10 hover:border-destructive text-destructive"
+          onClick={handleLogout}
         >
           <LogOut className="h-5 w-5" />
           Sair
@@ -233,6 +268,12 @@ export default function Profile() {
       <PurchaseDialog
         open={purchaseDialogOpen}
         onOpenChange={setPurchaseDialogOpen}
+      />
+
+      <NotificationPermissionDialog
+        open={notificationDialogOpen}
+        onOpenChange={setNotificationDialogOpen}
+        onRequestPermission={requestPermission}
       />
     </div>
   );

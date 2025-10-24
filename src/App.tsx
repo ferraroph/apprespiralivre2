@@ -10,6 +10,7 @@ import Leagues from "./pages/Leagues";
 import Content from "./pages/Content";
 import CommunityReal from "./pages/CommunityReal";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Squads from "./pages/Squads";
 import SquadDetailPage from "./pages/SquadDetailPage";
 import Admin from "./pages/Admin";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/squads/:id" element={<AppLayout><SquadDetailPage /></AppLayout>} />
             <Route path="/ai-coach" element={<AppLayout><AICoach /></AppLayout>} />
             <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
+            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
             <Route path="/admin" element={<AppLayout><Admin /></AppLayout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
