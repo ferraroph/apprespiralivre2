@@ -7,53 +7,18 @@
     <meta name="description" content="Pare de fumar de forma gamificada e divertida. Acompanhe seu progresso, ganhe recompensas e junte-se a uma comunidade de apoio." />
     <meta name="author" content="Respira Livre" />
     
-    <!-- Preconnect to critical origins (fastest connection setup) -->
+    <!-- DNS Prefetch for faster font loading -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    
+    <!-- Preconnect to font origins (faster than dns-prefetch) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
-    <!-- Preload critical font for LCP optimization -->
-    <link rel="preload" href="https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2" as="font" type="font/woff2" crossorigin>
-    
-    <!-- Load fonts with optimal display strategy -->
+    <!-- Load fonts with display=swap for immediate text rendering -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"></noscript>
-    
-    <!-- Inline critical CSS to reduce render blocking -->
-    <style>
-      /* Critical above-the-fold styles */
-      :root {
-        --primary: 221.2 83.2% 53.3%;
-        --background: 222.2 84% 4.9%;
-        --foreground: 210 40% 98%;
-      }
-      body { 
-        margin: 0; 
-        font-family: Inter, system-ui, -apple-system, sans-serif;
-        background-color: hsl(var(--background));
-        color: hsl(var(--foreground));
-      }
-      .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
-      .font-bold { font-weight: 700; }
-      .mb-2 { margin-bottom: 0.5rem; }
-      .text-center { text-align: center; }
-      .text-primary { color: hsl(var(--primary)); }
-      .text-glow { 
-        text-shadow: 0 0 20px hsl(var(--primary) / 0.3),
-                     0 0 40px hsl(var(--primary) / 0.2);
-      }
-      .min-h-screen { 
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .rounded-lg { border-radius: 0.5rem; }
-      .opacity-0 { opacity: 0; }
-      .transition-opacity { transition: opacity 0.3s; }
-      /* Hide placeholder once React loads */
-      #root:not(:empty) + #app-placeholder { display: none; }
-    </style>
 
     <meta property="og:title" content="Respira Livre - O Duolingo da Cessação" />
     <meta property="og:description" content="Pare de fumar de forma gamificada e divertida. Acompanhe seu progresso, ganhe recompensas e junte-se a uma comunidade de apoio." />
@@ -67,14 +32,6 @@
 
   <body>
     <div id="root"></div>
-    <!-- Static placeholder for LCP optimization - hidden once React loads -->
-    <div id="app-placeholder" class="min-h-screen">
-      <div class="rounded-lg text-center">
-        <h1 class="text-4xl font-bold text-primary text-glow mb-2">Respira Livre</h1>
-      </div>
-    </div>
-    <!-- Preload main module for faster execution -->
-    <link rel="modulepreload" href="/src/main.tsx">
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
