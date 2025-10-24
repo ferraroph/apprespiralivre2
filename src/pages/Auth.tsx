@@ -60,6 +60,29 @@ export default function Auth() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Security: Map authentication errors to generic messages to prevent user enumeration
+  const mapAuthError = (error: Error): string => {
+    const message = error.message.toLowerCase();
+    
+    // Login errors - use generic message
+    if (message.includes('invalid login') || message.includes('invalid password') || message.includes('invalid credentials')) {
+      return 'Email ou senha incorretos';
+    }
+    
+    // Signup errors - don't reveal if email exists
+    if (message.includes('already registered') || message.includes('already exists') || message.includes('already been registered')) {
+      return 'Não foi possível criar conta. Se já tem uma conta, tente fazer login.';
+    }
+    
+    // Email confirmation errors (these can be specific)
+    if (message.includes('email not confirmed')) {
+      return 'Email não confirmado. Verifique sua caixa de entrada.';
+    }
+    
+    // Generic fallback
+    return 'Erro ao processar solicitação. Tente novamente.';
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -94,7 +117,7 @@ export default function Auth() {
         });
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      const errorMessage = error instanceof Error ? mapAuthError(error) : "Erro desconhecido";
       toast({
         title: "Erro",
         description: errorMessage,
@@ -114,7 +137,7 @@ export default function Auth() {
 
       if (error) throw error;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      const errorMessage = error instanceof Error ? mapAuthError(error) : "Erro desconhecido";
       toast({
         title: "Erro",
         description: errorMessage,

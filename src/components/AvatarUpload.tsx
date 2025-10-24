@@ -25,6 +25,29 @@ export function AvatarUpload({ userId, currentAvatarUrl, userName, onAvatarUpdat
       }
 
       const file = event.target.files[0];
+
+      // Security: Validate file size (max 5MB for avatars)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      if (file.size > MAX_FILE_SIZE) {
+        toast({
+          title: "Arquivo muito grande",
+          description: "O tamanho máximo para avatares é 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Security: Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Tipo de arquivo inválido",
+          description: "Apenas imagens JPG, PNG, WEBP ou GIF são permitidas.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/avatar.${fileExt}`;
 
