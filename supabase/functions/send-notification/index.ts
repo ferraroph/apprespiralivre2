@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createErrorResponse, ErrorCodes, handleError } from "../_shared/error-handler.ts";
+import { create } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,10 +48,10 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const fcmServerKey = Deno.env.get("FCM_SERVER_KEY");
+    const firebaseServiceAccount = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
     
-    if (!fcmServerKey) {
-      throw new Error("FCM_SERVER_KEY not configured");
+    if (!firebaseServiceAccount) {
+      throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -71,11 +72,11 @@ serve(async (req) => {
     // Handle different notification types
     switch (body.type) {
       case "daily_reminder":
-        ({ sent: notificationsSent, errors } = await sendDailyReminders(supabase, fcmServerKey));
+        ({ sent: notificationsSent, errors } = await sendDailyReminders(supabase));
         break;
       
       case "streak_at_risk":
-        ({ sent: notificationsSent, errors } = await sendStreakAtRiskNotifications(supabase, fcmServerKey));
+        ({ sent: notificationsSent, errors } = await sendStreakAtRiskNotifications(supabase));
         break;
       
       case "achievement":
@@ -85,7 +86,7 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        await sendAchievementNotification(supabase, fcmServerKey, body.payload.user_id, body.achievement_id);
+        await sendAchievementNotification(supabase, body.payload.user_id, body.achievement_id);
         notificationsSent = 1;
         break;
       
@@ -97,7 +98,7 @@ serve(async (req) => {
           );
         }
         if (body.payload.user_id) {
-          await sendNotificationToUser(supabase, fcmServerKey, body.payload.user_id, body.payload.title, body.payload.body, body.payload.data);
+          await sendNotificationToUser(supabase, body.payload.user_id, body.payload.title, body.payload.body, body.payload.data);
           notificationsSent = 1;
         }
         break;
@@ -124,7 +125,53 @@ serve(async (req) => {
   }
 });
 
-async function sendDailyReminders(supabase: any, fcmServerKey: string) {
+// Generate OAuth2 access token from Firebase service account
+async function getAccessToken(): Promise<string> {
+  const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+  if (!serviceAccountJson) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
+  }
+
+  const serviceAccount = JSON.parse(serviceAccountJson);
+  const now = Math.floor(Date.now() / 1000);
+  
+  const header = {
+    alg: "RS256",
+    typ: "JWT",
+  };
+  
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+  };
+
+  // Create JWT using djwt
+  const jwt = await create(header, payload, serviceAccount.private_key);
+
+  // Exchange JWT for access token
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get access token: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
+async function sendDailyReminders(supabase: any) {
   // Query users who haven't checked in today
   const today = new Date().toISOString().split('T')[0];
   
@@ -145,7 +192,6 @@ async function sendDailyReminders(supabase: any, fcmServerKey: string) {
     try {
       await sendNotificationToUser(
         supabase,
-        fcmServerKey,
         user.user_id,
         "Hora do Check-in! 🌟",
         "Não esqueça de registrar seu progresso hoje. Sua jornada é importante!",
@@ -161,7 +207,7 @@ async function sendDailyReminders(supabase: any, fcmServerKey: string) {
   return { sent, errors };
 }
 
-async function sendStreakAtRiskNotifications(supabase: any, fcmServerKey: string) {
+async function sendStreakAtRiskNotifications(supabase: any) {
   // Query users who haven't checked in for 48 hours
   const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
   
@@ -183,7 +229,6 @@ async function sendStreakAtRiskNotifications(supabase: any, fcmServerKey: string
     try {
       await sendNotificationToUser(
         supabase,
-        fcmServerKey,
         user.user_id,
         "⚠️ Sua sequência está em risco!",
         `Você está há 48h sem fazer check-in. Não perca sua sequência de ${user.current_streak} dias!`,
@@ -199,7 +244,7 @@ async function sendStreakAtRiskNotifications(supabase: any, fcmServerKey: string
   return { sent, errors };
 }
 
-async function sendAchievementNotification(supabase: any, fcmServerKey: string, userId: string, achievementId: string) {
+async function sendAchievementNotification(supabase: any, userId: string, achievementId: string) {
   // Fetch achievement details
   const { data: achievement, error } = await supabase
     .from("achievements")
@@ -214,7 +259,6 @@ async function sendAchievementNotification(supabase: any, fcmServerKey: string, 
 
   await sendNotificationToUser(
     supabase,
-    fcmServerKey,
     userId,
     "🏆 Conquista Desbloqueada!",
     `Parabéns! Você desbloqueou: ${achievement.name}`,
@@ -227,8 +271,7 @@ async function sendAchievementNotification(supabase: any, fcmServerKey: string, 
 }
 
 async function sendNotificationToUser(
-  supabase: any,
-  fcmServerKey: string,
+  supabase: unknown,
   userId: string,
   title: string,
   body: string,
@@ -274,11 +317,14 @@ async function sendNotificationToUser(
         },
       };
 
-      const response = await fetch("https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send", {
+      // Get OAuth2 token from service account
+      const accessToken = await getAccessToken();
+      
+      const response = await fetch("https://fcm.googleapis.com/v1/projects/respira-livre-app/messages:send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${fcmServerKey}`,
+          "Authorization": `Bearer ${accessToken}`,
         },
         body: JSON.stringify(message),
       });

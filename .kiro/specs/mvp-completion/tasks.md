@@ -432,17 +432,21 @@
     - Return user-friendly error messages
     - _Requirements: 7.3_
 
-- [x] 9. Deploy and configure external services
+- [-] 9. Deploy and configure external services
 
 
 
-  - [ ] 9.1 Set up Firebase project for FCM
+
+
+  - [x] 9.1 Set up Firebase project for FCM
+
     - Create Firebase project in console
     - Enable Cloud Messaging
     - Generate and save Server Key
     - Add FCM_SERVER_KEY to Supabase secrets
     - _Requirements: 2.1, 2.5_
   
+
   - [ ] 9.2 Set up Stripe account and products
     - Create Stripe account
     - Create product: Streak Freeze (R$ 4.90)
@@ -451,19 +455,23 @@
     - Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to Supabase
     - Configure webhook endpoint URL
     - _Requirements: 4.1, 4.2_
+
   
   - [ ] 9.3 Set up Upstash Redis database
     - Create Upstash account
     - Create Redis database
     - Copy connection URL and token
     - Add UPSTASH_REDIS_URL and UPSTASH_REDIS_TOKEN to Supabase
+
     - _Requirements: 7.2_
   
   - [ ] 9.4 Set up Sentry project
     - Create Sentry account and project
     - Copy DSN
     - Add SENTRY_DSN to environment variables
+
     - Configure source maps upload (optional)
+
     - _Requirements: 7.3_
   
   - [ ] 9.5 Deploy all Edge Functions to Supabase
