@@ -7,9 +7,11 @@ import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { NotificationPermissionDialog } from "@/components/NotificationPermissionDialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [darkMode, setDarkMode] = useState(() => {
     return document.documentElement.classList.contains('dark');
   });
@@ -22,9 +24,11 @@ export default function Settings() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
       localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
@@ -39,12 +43,26 @@ export default function Settings() {
         await requestPermission();
       } catch (error) {
         console.error("Error requesting permission:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível ativar notificações",
+          variant: "destructive",
+        });
       }
     } else {
       try {
         await unregisterToken();
+        toast({
+          title: "Notificações desativadas",
+          description: "Você não receberá mais notificações push",
+        });
       } catch (error) {
         console.error("Error unregistering token:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível desativar notificações",
+          variant: "destructive",
+        });
       }
     }
   };

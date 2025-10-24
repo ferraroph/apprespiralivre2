@@ -308,8 +308,12 @@ export default function Profile() {
       <div className="space-y-3">
         <Button
           variant="outline"
-          className="w-full justify-start gap-3 border-primary/30 hover:bg-primary/10 hover:border-primary"
-          onClick={() => navigate("/settings")}
+          className="w-full justify-start gap-3 border-primary/30 hover:bg-primary/10 hover:border-primary transition-all"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate("/settings");
+          }}
         >
           <Settings className="h-5 w-5" />
           Configurações

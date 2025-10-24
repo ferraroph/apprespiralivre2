@@ -8,57 +8,57 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Light Mode - Respira Livre */
-    --background: 0 0% 100%;
-    --foreground: 120 10% 10%;
+    /* PROFESSIONAL Light Mode - Respira Livre */
+    --background: 0 0% 98%;
+    --foreground: 120 10% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 120 10% 10%;
+    --card-foreground: 120 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 120 10% 10%;
+    --popover-foreground: 120 10% 15%;
 
-    /* Verde Respira */
-    --primary: 120 70% 45%;
+    /* Verde Respira - Optimized for Light */
+    --primary: 120 55% 40%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 120 80% 50%;
+    --primary-glow: 120 60% 45%;
 
-    --secondary: 120 10% 95%;
-    --secondary-foreground: 120 10% 10%;
+    --secondary: 120 20% 92%;
+    --secondary-foreground: 120 15% 20%;
 
-    --muted: 120 10% 95%;
-    --muted-foreground: 120 5% 40%;
+    --muted: 120 15% 94%;
+    --muted-foreground: 120 8% 45%;
 
-    --accent: 120 70% 50%;
+    --accent: 120 60% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 120 10% 90%;
-    --input: 120 10% 95%;
-    --ring: 120 70% 45%;
+    --border: 120 15% 88%;
+    --input: 120 10% 96%;
+    --ring: 120 55% 40%;
 
     --radius: 1rem;
 
-    /* Custom Variables for Light Mode */
-    --neon-glow: 0 0 12px hsl(var(--primary) / 0.2), 0 0 24px hsl(var(--primary) / 0.1);
-    --neon-glow-strong: 0 0 20px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.2);
-    --neon-glow-subtle: 0 0 8px hsl(var(--primary) / 0.15);
-    --gradient-premium: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(120 10% 98%) 50%, hsl(var(--background)) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(120 10% 98%) 100%);
-    --card-depth: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 1px hsl(var(--primary) / 0.1);
+    /* Custom Variables for Professional Light Mode */
+    --neon-glow: 0 2px 8px hsl(var(--primary) / 0.12), 0 4px 16px hsl(var(--primary) / 0.08);
+    --neon-glow-strong: 0 4px 12px hsl(var(--primary) / 0.18), 0 8px 24px hsl(var(--primary) / 0.12);
+    --neon-glow-subtle: 0 1px 4px hsl(var(--primary) / 0.1);
+    --gradient-premium: linear-gradient(135deg, hsl(0 0% 98%) 0%, hsl(120 20% 96%) 50%, hsl(0 0% 98%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(120 15% 97%) 100%);
+    --card-depth: 0 2px 8px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04), 0 0 0 1px hsl(var(--border));
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 120 10% 10%;
-    --sidebar-primary: 120 70% 45%;
+    --sidebar-foreground: 120 10% 15%;
+    --sidebar-primary: 120 55% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 120 10% 95%;
-    --sidebar-accent-foreground: 120 10% 10%;
-    --sidebar-border: 120 10% 90%;
-    --sidebar-ring: 120 70% 45%;
+    --sidebar-accent: 120 15% 94%;
+    --sidebar-accent-foreground: 120 15% 20%;
+    --sidebar-border: 120 15% 88%;
+    --sidebar-ring: 120 55% 40%;
   }
 
   .dark {
@@ -133,8 +133,18 @@ All colors MUST be HSL.
 
   body:not(.dark) {
     background-image: 
-      radial-gradient(circle at 20% 50%, hsl(120 70% 45% / 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, hsl(120 70% 45% / 0.03) 0%, transparent 50%);
+      radial-gradient(circle at 20% 50%, hsl(120 55% 40% / 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, hsl(120 60% 45% / 0.03) 0%, transparent 50%);
+  }
+
+  /* Subtle texture for light mode */
+  body:not(.dark)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.015'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
   }
 
   /* Grain Texture Effect */
@@ -189,9 +199,14 @@ All colors MUST be HSL.
     transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
-  .card-interactive:hover {
+  body.dark .card-interactive:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5), 0 0 20px hsl(var(--primary) / 0.2);
+  }
+
+  body:not(.dark) .card-interactive:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px hsl(var(--primary) / 0.15);
   }
 
   .card-interactive:active {
@@ -264,9 +279,15 @@ All colors MUST be HSL.
     box-shadow: var(--card-depth);
   }
 
-  .card-premium:hover {
+  body.dark .card-premium:hover {
     border-color: hsl(var(--primary) / 0.3);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5), 0 0 16px hsl(var(--primary) / 0.15);
+    transform: translateY(-2px);
+  }
+
+  body:not(.dark) .card-premium:hover {
+    border-color: hsl(var(--primary) / 0.25);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px hsl(var(--primary) / 0.2);
     transform: translateY(-2px);
   }
 }
