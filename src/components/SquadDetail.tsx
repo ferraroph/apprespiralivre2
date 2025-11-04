@@ -46,48 +46,53 @@ export function SquadDetail() {
     try {
       setLoading(true);
 
-      // Use RPC function for optimal single-query performance
-      try {
-        const { data: squadWithMembers, error: rpcError } = await supabase
-          .rpc('get_squad_with_members', { squad_uuid: id });
+      // Fetch squad data
+      const { data: squadData, error: squadError } = await supabase
+        .from("squads")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-        if (rpcError) {
-          console.log("RPC failed, falling back to regular queries:", rpcError);
-          throw rpcError;
-        }
+      if (squadError) throw squadError;
+      setSquad(squadData);
 
-        if (squadWithMembers?.squad) {
-          setSquad(squadWithMembers.squad);
-          setMembers(squadWithMembers.members || []);
-        } else {
-          throw new Error("Squad not found");
-        }
-      } catch (rpcError) {
-        // Fallback to regular queries if RPC fails
-        console.log("Using fallback queries");
-        
-        const [squadResult, membersResult] = await Promise.all([
-          supabase.from("squads").select("*").eq("id", id).single(),
-          supabase
-            .from("squad_members")
-            .select(`
-              *,
-              profiles:user_id (nickname, avatar_url),
-              progress:user_id (current_streak)
-            `)
-            .eq("squad_id", id)
-            .order("joined_at", { ascending: true })
-        ]);
+      // Fetch squad members
+      const { data: membersData, error: membersError } = await supabase
+        .from("squad_members")
+        .select("*")
+        .eq("squad_id", id)
+        .order("joined_at", { ascending: true });
 
-        if (squadResult.error) throw squadResult.error;
-        if (membersResult.error) throw membersResult.error;
+      if (membersError) throw membersError;
 
-        setSquad(squadResult.data);
-        setMembers((membersResult.data || []).map((member) => ({
-          ...member,
-          progress: member.progress || { current_streak: 0 }
-        })) as SquadMember[]);
-      }
+      // Fetch profiles for each member
+      const userIds = (membersData || []).map(m => m.user_id);
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, nickname, avatar_url")
+        .in("user_id", userIds);
+
+      // Fetch progress for each member
+      const { data: progressData } = await supabase
+        .from("progress")
+        .select("user_id, current_streak")
+        .in("user_id", userIds);
+
+      // Map profiles and progress to members
+      const profilesMap = new Map(
+        (profilesData || []).map(p => [p.user_id, p])
+      );
+      const progressMap = new Map(
+        (progressData || []).map(p => [p.user_id, p])
+      );
+
+      const membersWithData = (membersData || []).map(member => ({
+        ...member,
+        profiles: profilesMap.get(member.user_id) || { nickname: "Usuário", avatar_url: null },
+        progress: progressMap.get(member.user_id) || { current_streak: 0 }
+      }));
+
+      setMembers(membersWithData as SquadMember[]);
     } catch (error) {
       console.error("Error fetching squad details:", error);
       toast({

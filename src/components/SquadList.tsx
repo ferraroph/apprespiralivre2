@@ -23,6 +23,7 @@ export function SquadList() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [squads, setSquads] = useState<Squad[]>([]);
+  const [loading, setLoading] = useState(true);
   const [joiningSquadId, setJoiningSquadId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
@@ -166,7 +167,6 @@ export function SquadList() {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={() => {
-          clearCache(); // Clear cache to refetch fresh data
           fetchSquads();
           setCreateDialogOpen(false);
         }}
