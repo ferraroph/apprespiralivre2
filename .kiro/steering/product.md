@@ -1,20 +1,51 @@
-# Product Overview
+---
+inclusion: always
+---
 
-Respira Livre is a gamified smoking cessation app that helps users quit smoking through daily check-ins, progress tracking, and community support.
+# Product Context: Respira Livre
+
+Gamified smoking cessation app helping users quit through daily engagement, progress tracking, and community support.
 
 ## Core Features
 
-- **Daily Check-ins**: Gamified system with rewards and streak tracking
-- **Progress Dashboard**: Real-time metrics (cigarettes avoided, money saved, health improvements)
-- **Authentication**: Email/password and Google OAuth
-- **Content Library**: Meditation audios and breathing exercises
-- **Community**: Leagues and social features (squads in development)
-- **Achievements**: Unlock badges and rewards based on progress
+### Daily Check-ins
+- Gamified system with rewards and streak tracking
+- Primary user engagement mechanism
 
-## Target Platform
+### Progress Dashboard
+- Real-time metrics: cigarettes avoided, money saved, health improvements
+- Visual progress indicators and milestones
 
-Mobile-first web application with responsive desktop support.
+### Authentication
+- Email/password and Google OAuth
+- Onboarding flow for new users
 
-## Backend
+### Content Library
+- Meditation audios and breathing exercises
+- Helps users manage cravings
 
-Lovable Cloud (Supabase) with edge functions for serverless logic.
+### Community Features
+- Leagues (leaderboards and competitions)
+- Squads (in development)
+- Social engagement and support
+
+### Achievements System
+- Badges and rewards based on progress
+- Gamification layer for motivation
+
+## Design Principles
+
+- Mobile-first (responsive desktop support)
+- Premium aesthetic: subtle glows, smooth transitions, depth
+- Accessible and intuitive UX
+- Performance-focused (fast load times)
+
+## User Journey
+
+1. Sign up/Login → 2. Onboarding → 3. Dashboard (home) → 4. Daily check-ins → 5. Explore content/community
+
+## Business Context
+
+- Target audience: Smokers committed to quitting
+- Engagement model: Daily active usage
+- Backend: Lovable Cloud (Supabase) with edge functions

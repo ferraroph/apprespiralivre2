@@ -1,49 +1,74 @@
-# Tech Stack
+---
+inclusion: always
+---
 
-## Core Technologies
+# Tech Stack & Development Guidelines
 
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite 5
-- **Routing**: React Router v6
-- **Backend**: Lovable Cloud (Supabase - PostgreSQL + Edge Functions)
-- **State Management**: TanStack Query (React Query)
-- **Forms**: React Hook Form + Zod validation
+## Stack Overview
 
-## UI & Styling
+- React 18 + TypeScript (relaxed mode: noImplicitAny: false, strictNullChecks: false)
+- Vite 5 with path aliases (`@/` → `./src/`)
+- React Router v6 for routing
+- Supabase (PostgreSQL + Edge Functions) via Lovable Cloud
+- TanStack Query for server state
+- React Hook Form + Zod for forms/validation
+- shadcn/ui (Radix UI) + Tailwind CSS
+- Lucide React icons
 
-- **Component Library**: shadcn/ui (Radix UI primitives)
-- **Styling**: Tailwind CSS with custom design tokens
-- **Animations**: tailwindcss-animate with custom keyframes
-- **Icons**: Lucide React
-- **Toasts**: Sonner + shadcn toast
-- **Theme**: HSL-based color system with CSS variables
+## Code Style Rules
 
-## Development Tools
+### TypeScript
+- Use TypeScript but relaxed rules apply (implicit any allowed)
+- Prefer type inference over explicit typing when obvious
+- Use Zod schemas for runtime validation
 
-- **Linter**: ESLint 9
-- **TypeScript Config**: Relaxed rules (noImplicitAny: false, strictNullChecks: false)
-- **Dev Tagger**: lovable-tagger for component tracking
+### React Patterns
+- Functional components only
+- Custom hooks for reusable logic (prefix with `use`)
+- TanStack Query for all server state (no manual fetch in components)
+- React Hook Form for all forms
+- Avoid prop drilling - use composition or context when needed
+
+### Styling
+- Tailwind utility classes only (no CSS modules or styled-components)
+- Use design tokens from CSS variables (HSL format)
+- Premium aesthetic: subtle glows, smooth transitions, depth effects
+- Mobile-first responsive design
+
+### Imports
+- Always use `@/` alias for src imports
+- Group imports: external → internal → types → styles
+
+### State Management
+- Server state: TanStack Query only
+- Auth state: `useAuth` hook
+- Local state: React hooks (useState, useReducer)
+- NO Redux, Zustand, or other global state libraries
+
+## Critical Rules
+
+### shadcn/ui Components
+- NEVER manually edit files in `src/components/ui/`
+- These are auto-generated - regenerate via CLI if changes needed
+
+### Routing
+- Add custom routes ABOVE the catch-all `*` route in `App.tsx`
+- Protected routes must be wrapped in `<AppLayout>`
+- Auth routes (`/auth`, `/onboarding`) are standalone
+
+### Supabase Integration
+- Database changes: Run SQL in Supabase Dashboard SQL Editor
+- Edge Functions: Deploy via `supabase functions deploy <name>`
+- Secrets: Set via `supabase secrets set KEY=value`
+- RLS policies required before production
 
 ## Common Commands
 
 ```bash
-# Development server (port 8080)
-npm run dev
-
-# Production build
-npm run build
-
-# Development build
-npm run build:dev
-
-# Lint code
-npm run lint
-
-# Preview production build
-npm run preview
-
-# Deploy Supabase functions
-supabase functions deploy <function-name>
+npm run dev          # Dev server (port 8080)
+npm run build        # Production build
+npm run lint         # ESLint check
+supabase functions deploy <name>  # Deploy edge function
 ```
 
 ## Environment Variables
@@ -51,22 +76,3 @@ supabase functions deploy <function-name>
 Required in `.env`:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
-
-## Key Dependencies
-
-- `@supabase/supabase-js`: Backend integration
-- `@tanstack/react-query`: Server state management
-- `react-hook-form`: Form handling
-- `zod`: Schema validation
-- `date-fns`: Date utilities
-- `recharts`: Data visualization
-
-## Lovable Cloud Integration
-
-This project uses **Lovable Cloud**, which is Lovable's managed Supabase integration. Key points:
-
-- **Database tables**: Created via Lovable chat prompts. Lovable generates SQL snippets that must be run in Supabase Dashboard SQL Editor.
-- **Authentication**: Configured in Supabase Dashboard (Authentication → Providers). OAuth providers like Google require Client ID/Secret from provider's console.
-- **Edge Functions**: Deployed via Supabase CLI (`supabase functions deploy <function-name>`). Secrets managed via `supabase secrets set KEY=value`.
-- **File Storage**: Managed through Supabase Storage. Free tier: 50MB per file limit.
-- **Security**: Row Level Security (RLS) policies must be configured in Supabase Dashboard before production.
