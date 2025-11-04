@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Users, Flame, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreateSquadDialog } from "@/components/CreateSquadDialog";
+import { useCachedAsync } from "@/hooks/useCache";
 
 interface Squad {
   id: string;
@@ -22,40 +23,58 @@ export function SquadList() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [squads, setSquads] = useState<Squad[]>([]);
-  const [loading, setLoading] = useState(true);
   const [joiningSquadId, setJoiningSquadId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  useEffect(() => {
-    fetchSquads();
-  }, []);
-
-  const fetchSquads = async () => {
+  const fetchSquads = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Fetch all squads
+      // Simple query compatible with Supabase Free plan
+      // First, get all squads (simple query)
       const { data: squadsData, error: squadsError } = await supabase
         .from("squads")
-        .select("*")
+        .select("id, name, description, max_members, squad_streak, created_at")
         .order("squad_streak", { ascending: false });
 
       if (squadsError) throw squadsError;
 
-      // Fetch member counts for each squad
-      const squadsWithCounts = await Promise.all(
-        (squadsData || []).map(async (squad) => {
-          const { count } = await supabase
-            .from("squad_members")
-            .select("*", { count: "exact", head: true })
-            .eq("squad_id", squad.id);
+      // Then get member counts separately (avoiding complex JOINs)
+      const squadIds = (squadsData || []).map(squad => squad.id);
+      
+      if (squadIds.length === 0) {
+        setSquads([]);
+        return;
+      }
 
-          return {
-            ...squad,
-            member_count: count || 0,
-          };
-        })
-      );
+      // Get member counts for all squads in one simple query
+      const { data: memberData, error: memberError } = await supabase
+        .from("squad_members")
+        .select("squad_id")
+        .in("squad_id", squadIds);
+
+      if (memberError) {
+        console.warn("Could not fetch member counts:", memberError);
+        // Return squads without member counts rather than failing
+        const squadsWithoutCounts = (squadsData || []).map(squad => ({
+          ...squad,
+          member_count: 0
+        }));
+        setSquads(squadsWithoutCounts);
+        return;
+      }
+
+      // Count members per squad
+      const memberCounts = new Map();
+      (memberData || []).forEach(member => {
+        const count = memberCounts.get(member.squad_id) || 0;
+        memberCounts.set(member.squad_id, count + 1);
+      });
+
+      const squadsWithCounts = (squadsData || []).map(squad => ({
+        ...squad,
+        member_count: memberCounts.get(squad.id) || 0
+      }));
 
       setSquads(squadsWithCounts);
     } catch (error) {
@@ -68,7 +87,11 @@ export function SquadList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchSquads();
+  }, [fetchSquads]);
 
   const handleJoinSquad = async (squadId: string) => {
     try {
@@ -120,10 +143,19 @@ export function SquadList() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-32 w-full" />
-        ))}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -134,6 +166,7 @@ export function SquadList() {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={() => {
+          clearCache(); // Clear cache to refetch fresh data
           fetchSquads();
           setCreateDialogOpen(false);
         }}

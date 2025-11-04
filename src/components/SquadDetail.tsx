@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,58 +42,52 @@ export function SquadDetail() {
   const [loading, setLoading] = useState(true);
   const [leaving, setLeaving] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchSquadDetails();
-    }
-  }, [id]);
-
-  const fetchSquadDetails = async () => {
+  const fetchSquadDetails = useCallback(async () => {
     try {
       setLoading(true);
 
-      // Fetch squad details
-      const { data: squadData, error: squadError } = await supabase
-        .from("squads")
-        .select("*")
-        .eq("id", id)
-        .single();
+      // Use RPC function for optimal single-query performance
+      try {
+        const { data: squadWithMembers, error: rpcError } = await supabase
+          .rpc('get_squad_with_members', { squad_uuid: id });
 
-      if (squadError) throw squadError;
-      setSquad(squadData);
+        if (rpcError) {
+          console.log("RPC failed, falling back to regular queries:", rpcError);
+          throw rpcError;
+        }
 
-      // Fetch squad members with profiles and progress
-      const { data: membersData, error: membersError } = await supabase
-        .from("squad_members")
-        .select(`
-          *,
-          profiles:user_id (
-            nickname,
-            avatar_url
-          )
-        `)
-        .eq("squad_id", id)
-        .order("joined_at", { ascending: true });
+        if (squadWithMembers?.squad) {
+          setSquad(squadWithMembers.squad);
+          setMembers(squadWithMembers.members || []);
+        } else {
+          throw new Error("Squad not found");
+        }
+      } catch (rpcError) {
+        // Fallback to regular queries if RPC fails
+        console.log("Using fallback queries");
+        
+        const [squadResult, membersResult] = await Promise.all([
+          supabase.from("squads").select("*").eq("id", id).single(),
+          supabase
+            .from("squad_members")
+            .select(`
+              *,
+              profiles:user_id (nickname, avatar_url),
+              progress:user_id (current_streak)
+            `)
+            .eq("squad_id", id)
+            .order("joined_at", { ascending: true })
+        ]);
 
-      if (membersError) throw membersError;
+        if (squadResult.error) throw squadResult.error;
+        if (membersResult.error) throw membersResult.error;
 
-      // Fetch progress for each member separately
-      const membersWithProgress = await Promise.all(
-        (membersData || []).map(async (member: any) => {
-          const { data: progressData } = await supabase
-            .from("progress")
-            .select("current_streak")
-            .eq("user_id", member.user_id)
-            .single();
-
-          return {
-            ...member,
-            progress: progressData || { current_streak: 0 }
-          };
-        })
-      );
-
-      setMembers(membersWithProgress as any);
+        setSquad(squadResult.data);
+        setMembers((membersResult.data || []).map((member) => ({
+          ...member,
+          progress: member.progress || { current_streak: 0 }
+        })) as SquadMember[]);
+      }
     } catch (error) {
       console.error("Error fetching squad details:", error);
       toast({
@@ -104,7 +98,13 @@ export function SquadDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, toast]);
+
+  useEffect(() => {
+    if (id) {
+      fetchSquadDetails();
+    }
+  }, [id, fetchSquadDetails]);
 
   const handleLeaveSquad = async () => {
     if (!id) return;
@@ -145,9 +145,16 @@ export function SquadDetail() {
     }
   };
 
-  const isMember = members.some((m) => m.user_id === user?.id);
-  const sortedMembers = [...members].sort(
-    (a, b) => (b.progress?.current_streak || 0) - (a.progress?.current_streak || 0)
+  const isMember = useMemo(() => 
+    members.some((m) => m.user_id === user?.id),
+    [members, user?.id]
+  );
+  
+  const sortedMembers = useMemo(() => 
+    [...members].sort(
+      (a, b) => (b.progress?.current_streak || 0) - (a.progress?.current_streak || 0)
+    ),
+    [members]
   );
 
   if (loading) {
