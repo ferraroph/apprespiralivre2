@@ -38,21 +38,24 @@ export default function Auth() {
 
     checkAuthAndProfile();
 
+    // CRITICAL: Use non-async callback to prevent auth deadlock
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         if (session) {
-          // Check if user has completed onboarding
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("user_id", session.user.id)
-            .single();
+          // Defer async operations with setTimeout to prevent blocking
+          setTimeout(async () => {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("user_id", session.user.id)
+              .single();
 
-          if (profile) {
-            navigate("/");
-          } else {
-            navigate("/onboarding");
-          }
+            if (profile) {
+              navigate("/");
+            } else {
+              navigate("/onboarding");
+            }
+          }, 0);
         }
       }
     );

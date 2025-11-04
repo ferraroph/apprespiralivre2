@@ -82,6 +82,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
     checkAuth();
 
+    // CRITICAL: Use non-async callback to prevent auth deadlock
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         // Ignore token refresh events
@@ -92,8 +93,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         if (!session && event !== 'SIGNED_OUT') {
           navigate("/auth");
         } else if (event === 'SIGNED_IN') {
-          // User just signed in, re-check auth
-          // Small delay to ensure profile data is available
+          // Defer async operations with setTimeout to prevent blocking
           setTimeout(() => checkAuth(), 500);
         }
       }
