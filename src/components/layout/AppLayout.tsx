@@ -13,45 +13,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
     const checkAuth = async () => {
-      // Prevent multiple simultaneous checks
-      if (isChecking) {
-        return;
-      }
-      
-      setIsChecking(true);
-      
-      // Safety timeout - if loading takes more than 10 seconds, redirect to auth
-      timeoutId = setTimeout(() => {
-        setIsLoading(false);
-        setIsChecking(false);
-        navigate("/auth");
-      }, 10000);
-      
       try {
-        // Check if we're processing OAuth callback (hash fragment present)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const isOAuthCallback = hashParams.has('access_token') || hashParams.has('error');
-        
-        if (isOAuthCallback) {
-          // Let Supabase process the OAuth callback first
-          setIsLoading(true);
-          // Clear the hash to prevent reprocessing
-          window.history.replaceState(null, '', window.location.pathname);
-          // Wait for Supabase to process
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        }
-
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          throw sessionError;
-        }
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
           navigate("/auth");
@@ -59,7 +25,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         }
         
         // Check if user has completed onboarding
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from("profiles")
           .select("*")
           .eq("user_id", session.user.id)
@@ -72,38 +38,29 @@ export function AppLayout({ children }: AppLayoutProps) {
 
         setIsAuthenticated(true);
       } catch (error) {
+        console.error("Auth check error:", error);
         navigate("/auth");
       } finally {
-        clearTimeout(timeoutId);
         setIsLoading(false);
-        setIsChecking(false);
       }
     };
 
     checkAuth();
 
-    // CRITICAL: Use non-async callback to prevent auth deadlock
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Ignore token refresh events
-        if (event === 'TOKEN_REFRESHED') {
-          return;
-        }
-        
-        if (!session && event !== 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT') {
           navigate("/auth");
-        } else if (event === 'SIGNED_IN') {
-          // Defer async operations with setTimeout to prevent blocking
-          setTimeout(() => checkAuth(), 500);
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Just update the session, don't navigate
+          setIsAuthenticated(!!session);
         }
       }
     );
 
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      subscription.unsubscribe();
-    };
-  }, [navigate, isChecking]);
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   if (isLoading) {
     return (
