@@ -20,23 +20,27 @@ export function AdminContentUpload({ onUploadComplete }: AdminContentUploadProps
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    const validTypes = ['audio/mpeg', 'audio/mp3', 'video/mp4', 'video/webm'];
+    // Security: Validate file type
+    const validTypes = [
+      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg',
+      'video/mp4', 'video/webm', 'video/ogg',
+      'image/jpeg', 'image/jpg', 'image/png', 'image/webp'
+    ];
     if (!validTypes.includes(file.type)) {
       toast({
         title: "Tipo de arquivo inválido",
-        description: "Por favor, envie um arquivo de áudio (MP3) ou vídeo (MP4, WebM).",
+        description: "Por favor, envie um arquivo de áudio (MP3, WAV), vídeo (MP4, WebM) ou imagem (JPG, PNG, WEBP).",
         variant: "destructive",
       });
       return;
     }
 
-    // Validate file size (max 50MB)
-    const maxSize = 50 * 1024 * 1024;
+    // Security: Validate file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024;
     if (file.size > maxSize) {
       toast({
         title: "Arquivo muito grande",
-        description: "O arquivo deve ter no máximo 50MB.",
+        description: "O arquivo deve ter no máximo 100MB.",
         variant: "destructive",
       });
       return;
@@ -104,7 +108,7 @@ export function AdminContentUpload({ onUploadComplete }: AdminContentUploadProps
           <Input
             id="media-upload"
             type="file"
-            accept="audio/mpeg,audio/mp3,video/mp4,video/webm"
+            accept="audio/mpeg,audio/mp3,audio/wav,audio/ogg,video/mp4,video/webm,video/ogg,image/jpeg,image/jpg,image/png,image/webp"
             onChange={handleFileUpload}
             disabled={uploading}
             className="flex-1"
@@ -120,7 +124,7 @@ export function AdminContentUpload({ onUploadComplete }: AdminContentUploadProps
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Formatos aceitos: MP3 (áudio), MP4/WebM (vídeo). Tamanho máximo: 50MB.
+          Formatos aceitos: MP3/WAV (áudio), MP4/WebM (vídeo), JPG/PNG/WEBP (imagem). Tamanho máximo: 100MB.
         </p>
       </div>
 

@@ -117,7 +117,7 @@ async function applyProductBenefits(
     throw new Error("Failed to fetch profile");
   }
 
-  let updateData: unknown = {};
+  let updateData: Record<string, any> = {};
 
   switch (productId) {
     case "streak_freeze":

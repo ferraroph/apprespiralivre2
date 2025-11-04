@@ -24,7 +24,7 @@ interface SquadMember {
   role: "leader" | "member";
   joined_at: string;
   profiles: {
-    name: string;
+    nickname: string;
     avatar_url: string | null;
   };
   progress: {
@@ -68,18 +68,32 @@ export function SquadDetail() {
         .select(`
           *,
           profiles:user_id (
-            name,
+            nickname,
             avatar_url
-          ),
-          progress:user_id (
-            current_streak
           )
         `)
         .eq("squad_id", id)
         .order("joined_at", { ascending: true });
 
       if (membersError) throw membersError;
-      setMembers((membersData as any) || []);
+
+      // Fetch progress for each member separately
+      const membersWithProgress = await Promise.all(
+        (membersData || []).map(async (member: any) => {
+          const { data: progressData } = await supabase
+            .from("progress")
+            .select("current_streak")
+            .eq("user_id", member.user_id)
+            .single();
+
+          return {
+            ...member,
+            progress: progressData || { current_streak: 0 }
+          };
+        })
+      );
+
+      setMembers(membersWithProgress as any);
     } catch (error) {
       console.error("Error fetching squad details:", error);
       toast({
@@ -222,7 +236,7 @@ export function SquadDetail() {
             <div>
               <p className="text-sm text-muted-foreground">Líder</p>
               <p className="text-lg font-bold text-primary">
-                {members.find((m) => m.role === "leader")?.profiles?.name || "N/A"}
+                {members.find((m) => m.role === "leader")?.profiles?.nickname || "N/A"}
               </p>
             </div>
           </div>
@@ -246,12 +260,12 @@ export function SquadDetail() {
               <Avatar className="h-12 w-12">
                 <AvatarImage src={member.profiles?.avatar_url || undefined} />
                 <AvatarFallback>
-                  {member.profiles?.name?.charAt(0).toUpperCase() || "?"}
+                  {member.profiles?.nickname?.charAt(0).toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold">{member.profiles?.name}</p>
+                  <p className="font-semibold">{member.profiles?.nickname}</p>
                   {member.role === "leader" && (
                     <Crown className="h-4 w-4 text-primary" />
                   )}

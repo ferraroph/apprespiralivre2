@@ -110,7 +110,8 @@ export function PurchaseDialog({ open, onOpenChange }: PurchaseDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="card-premium card-depth max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto"
+>
         <DialogHeader>
           <DialogTitle className="text-primary text-glow text-2xl">
             Melhorar Experiência

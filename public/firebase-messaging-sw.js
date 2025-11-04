@@ -5,16 +5,14 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// Initialize Firebase
-// Note: These values should match your Firebase project configuration
-// They will be replaced at runtime or configured via environment
+// Initialize Firebase with Respira Livre project configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyACOI010Z8GPcFqpWbTdtmpzZH8fndrjRk",
+  authDomain: "respira-livre-app.firebaseapp.com",
+  projectId: "respira-livre-app",
+  storageBucket: "respira-livre-app.firebasestorage.app",
+  messagingSenderId: "286074518251",
+  appId: "1:286074518251:web:a1da10d773c5dcc1045cae"
 };
 
 firebase.initializeApp(firebaseConfig);

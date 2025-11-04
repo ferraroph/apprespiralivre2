@@ -49,12 +49,65 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const firebaseServiceAccount = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
+    const cronSecret = Deno.env.get("CRON_SECRET");
     
     if (!firebaseServiceAccount) {
       throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Check authorization - either valid cron secret OR admin user
+    const authHeader = req.headers.get("Authorization");
+    const cronSecretHeader = req.headers.get("x-cron-secret");
+    
+    let isAuthorized = false;
+    
+    // Check for cron secret (for automated jobs)
+    if (cronSecret && cronSecretHeader === cronSecret) {
+      isAuthorized = true;
+    } 
+    // Check for admin JWT token
+    else if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (authError || !user) {
+        return createErrorResponse(
+          "Não autorizado",
+          ErrorCodes.UNAUTHORIZED,
+          401,
+          undefined,
+          corsHeaders
+        );
+      }
+      
+      // Check if user has admin role
+      const { data: hasAdminRole, error: roleError } = await supabase
+        .rpc("has_role", { _user_id: user.id, _role: "admin" });
+      
+      if (roleError || !hasAdminRole) {
+        return createErrorResponse(
+          "Acesso negado. Apenas administradores podem enviar notificações",
+          ErrorCodes.UNAUTHORIZED,
+          403,
+          undefined,
+          corsHeaders
+        );
+      }
+      
+      isAuthorized = true;
+    }
+    
+    if (!isAuthorized) {
+      return createErrorResponse(
+        "Autorização necessária. Use token de admin ou secret de cron",
+        ErrorCodes.UNAUTHORIZED,
+        401,
+        undefined,
+        corsHeaders
+      );
+    }
 
     // Validate request
     const body: NotificationRequest = await req.json();
@@ -136,7 +189,7 @@ async function getAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   
   const header = {
-    alg: "RS256",
+    alg: "RS256" as const,
     typ: "JWT",
   };
   
@@ -271,7 +324,7 @@ async function sendAchievementNotification(supabase: any, userId: string, achiev
 }
 
 async function sendNotificationToUser(
-  supabase: unknown,
+  supabase: any,
   userId: string,
   title: string,
   body: string,
@@ -289,7 +342,6 @@ async function sendNotificationToUser(
   }
 
   if (!tokens || tokens.length === 0) {
-    console.log(`No FCM tokens found for user ${userId}`);
     return;
   }
 
@@ -356,7 +408,5 @@ async function sendNotificationToUser(
       .from("user_tokens")
       .delete()
       .in("id", expiredTokenIds);
-    
-    console.log(`Cleaned up ${expiredTokenIds.length} expired tokens for user ${userId}`);
   }
 }

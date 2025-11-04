@@ -34,11 +34,30 @@ export function usePushNotifications() {
     }
   }, []);
 
+  // Check if running in iframe
+  const isInIframe = () => {
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true;
+    }
+  };
+
   // Request notification permission and register FCM token
   const requestPermission = async () => {
     if (!("Notification" in window)) {
       setError("This browser does not support notifications");
       toast.error("Notificações não são suportadas neste navegador");
+      return false;
+    }
+
+    // Check if in iframe
+    if (isInIframe()) {
+      setError("Notifications blocked in preview mode");
+      toast.error("Notificações não funcionam no modo de visualização. Abra o app em uma nova aba para ativar as notificações.", {
+        duration: 8000,
+      });
+      setLoading(false);
       return false;
     }
 
@@ -52,6 +71,16 @@ export function usePushNotifications() {
     setError(null);
 
     try {
+      // Check if permission was previously denied
+      if (Notification.permission === "denied") {
+        setError("Notification permission denied");
+        toast.error("Notificações foram bloqueadas. Por favor, habilite nas configurações do navegador.", {
+          duration: 8000,
+        });
+        setLoading(false);
+        return false;
+      }
+
       // Request permission
       const permission = await Notification.requestPermission();
       setPermission(permission);
@@ -80,10 +109,9 @@ export function usePushNotifications() {
       return true;
 
     } catch (err) {
-      console.error("Error requesting notification permission:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to enable notifications";
       setError(errorMessage);
-      toast.error("Erro ao ativar notificações");
+      toast.error("Erro ao ativar notificações: " + errorMessage);
       setLoading(false);
       return false;
     }
@@ -92,20 +120,29 @@ export function usePushNotifications() {
   // Initialize Firebase and get FCM token
   const initializeFirebaseAndGetToken = async (): Promise<string | null> => {
     try {
+      // Register service worker first
+      if ('serviceWorker' in navigator) {
+        try {
+          await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+          await navigator.serviceWorker.ready;
+        } catch (swError) {
+          throw new Error("Failed to register service worker");
+        }
+      }
+      
       // Check if Firebase is loaded
       if (!window.firebase) {
-        // Dynamically load Firebase scripts
         await loadFirebaseScripts();
       }
 
-      // Get Firebase config from environment or use placeholder
+      // Firebase config for Respira Livre project
       const firebaseConfig: FirebaseConfig = {
-        apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
-        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_AUTH_DOMAIN",
-        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_STORAGE_BUCKET",
-        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
-        appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID",
+        apiKey: "AIzaSyACOI010Z8GPcFqpWbTdtmpzZH8fndrjRk",
+        authDomain: "respira-livre-app.firebaseapp.com",
+        projectId: "respira-livre-app",
+        storageBucket: "respira-livre-app.firebasestorage.app",
+        messagingSenderId: "286074518251",
+        appId: "1:286074518251:web:a1da10d773c5dcc1045cae",
       };
 
       // Initialize Firebase if not already initialized
@@ -116,15 +153,13 @@ export function usePushNotifications() {
       // Get messaging instance
       const messaging = window.firebase.messaging();
 
-      // Get FCM token
+      // Get FCM token with VAPID key
       const token = await messaging.getToken({
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        vapidKey: "BBZECELz5cEi4RagXJH6p6L2Mpp0kGNzm5hYpvtXz7t_-rcJIGshxfirZ6GjuzMwP-p1YRHOvLmBUjC9ZClWDHo",
       });
 
       // Handle foreground messages
       messaging.onMessage((payload: any) => {
-        console.log("Foreground message received:", payload);
-        
         // Show toast notification
         const title = payload.notification?.title || "Respira Livre";
         const body = payload.notification?.body || "";
@@ -138,7 +173,6 @@ export function usePushNotifications() {
       return token;
 
     } catch (err) {
-      console.error("Error initializing Firebase:", err);
       return null;
     }
   };

@@ -36,8 +36,11 @@ export function createErrorResponse(
   const errorResponse: ErrorResponse = {
     error: message,
     code,
-    ...(details && { details }),
   };
+  
+  if (details) {
+    errorResponse.details = details;
+  }
 
   // Log error to Sentry (if configured)
   logErrorToSentry(message, code, details);

@@ -38,27 +38,53 @@ export default function Auth() {
 
     checkAuthAndProfile();
 
+    // CRITICAL: Use non-async callback to prevent auth deadlock
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         if (session) {
-          // Check if user has completed onboarding
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("user_id", session.user.id)
-            .single();
+          // Defer async operations with setTimeout to prevent blocking
+          setTimeout(async () => {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("user_id", session.user.id)
+              .single();
 
-          if (profile) {
-            navigate("/");
-          } else {
-            navigate("/onboarding");
-          }
+            if (profile) {
+              navigate("/");
+            } else {
+              navigate("/onboarding");
+            }
+          }, 0);
         }
       }
     );
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Security: Map authentication errors to generic messages to prevent user enumeration
+  const mapAuthError = (error: Error): string => {
+    const message = error.message.toLowerCase();
+    
+    // Login errors - use generic message
+    if (message.includes('invalid login') || message.includes('invalid password') || message.includes('invalid credentials')) {
+      return 'Email ou senha incorretos';
+    }
+    
+    // Signup errors - don't reveal if email exists
+    if (message.includes('already registered') || message.includes('already exists') || message.includes('already been registered')) {
+      return 'Não foi possível criar conta. Se já tem uma conta, tente fazer login.';
+    }
+    
+    // Email confirmation errors (these can be specific)
+    if (message.includes('email not confirmed')) {
+      return 'Email não confirmado. Verifique sua caixa de entrada.';
+    }
+    
+    // Generic fallback
+    return 'Erro ao processar solicitação. Tente novamente.';
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +120,7 @@ export default function Auth() {
         });
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      const errorMessage = error instanceof Error ? mapAuthError(error) : "Erro desconhecido";
       toast({
         title: "Erro",
         description: errorMessage,
@@ -114,7 +140,7 @@ export default function Auth() {
 
       if (error) throw error;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      const errorMessage = error instanceof Error ? mapAuthError(error) : "Erro desconhecido";
       toast({
         title: "Erro",
         description: errorMessage,

@@ -40,6 +40,50 @@ serve(async (req) => {
     }
 
     const { mood, notes } = await req.json();
+    
+    // Input validation
+    const validMoods = ["good", "neutral", "bad"];
+    
+    if (!mood || typeof mood !== "string" || !validMoods.includes(mood)) {
+      return createErrorResponse(
+        "Humor inválido. Use: good, neutral ou bad",
+        ErrorCodes.INVALID_INPUT,
+        400,
+        undefined,
+        corsHeaders
+      );
+    }
+    
+    if (mood.length > 50) {
+      return createErrorResponse(
+        "Humor muito longo",
+        ErrorCodes.INVALID_INPUT,
+        400,
+        undefined,
+        corsHeaders
+      );
+    }
+    
+    if (notes && typeof notes !== "string") {
+      return createErrorResponse(
+        "Notas devem ser texto",
+        ErrorCodes.INVALID_INPUT,
+        400,
+        undefined,
+        corsHeaders
+      );
+    }
+    
+    if (notes && notes.length > 500) {
+      return createErrorResponse(
+        "Notas muito longas (máximo 500 caracteres)",
+        ErrorCodes.INVALID_INPUT,
+        400,
+        undefined,
+        corsHeaders
+      );
+    }
+    
     const today = new Date().toISOString().split("T")[0];
 
     // Check if already checked in today

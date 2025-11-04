@@ -75,7 +75,8 @@ export function CheckinDialog({ open, onOpenChange, onSuccess }: CheckinDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="card-premium card-depth">
+      <DialogContent className="sm:max-w-md"
+>
         <DialogHeader>
           <DialogTitle className="text-primary text-glow">Check-in Diário</DialogTitle>
         </DialogHeader>
@@ -110,8 +111,12 @@ export function CheckinDialog({ open, onOpenChange, onSuccess }: CheckinDialogPr
               placeholder="Como foi seu dia? Algum desafio?"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              maxLength={500}
               rows={4}
             />
+            <p className="text-xs text-muted-foreground">
+              {notes.length}/500 caracteres
+            </p>
           </div>
 
           <Button
