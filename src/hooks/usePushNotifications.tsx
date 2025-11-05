@@ -155,7 +155,7 @@ export function usePushNotifications() {
 
       // Get FCM token with VAPID key
       const token = await messaging.getToken({
-        vapidKey: "BBZECELz5cEi4RagXJH6p6L2Mpp0kGNzm5hYpvtXz7t_-rcJIGshxfirZ6GjuzMwP-p1YRHOvLmBUjC9ZClWDHo",
+        vapidKey: "BHZqbAVO7OeAZpwo-IbUZFmW5JpfxIluJOH-s3eZKEGvd5t9hE3uMA5FyVW_NtfplM7al7hwoTCFfo4WikVBRj8",
       });
 
       // Handle foreground messages
