@@ -11,7 +11,7 @@ const navItems = [
   { icon: Home, label: "Início", path: "/" },
   { icon: Brain, label: "Coach IA", path: "/ai-coach" },
   { icon: Trophy, label: "Ligas", path: "/leagues" },
-  { icon: BookOpen, label: "Conteúdo", path: "/content" },
+  { icon: BookOpen, label: "Missões", path: "/missions" },
   { icon: Users, label: "Comunidade", path: "/community" },
   { icon: UsersRound, label: "Squads", path: "/squads" },
   { icon: User, label: "Perfil", path: "/profile" },

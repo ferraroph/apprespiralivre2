@@ -6,6 +6,7 @@ import { Flame, Coins, TrendingUp, Heart, Cigarette, DollarSign, CheckCircle } f
 import { useAuth } from "@/hooks/useAuth";
 import { useProgress } from "@/hooks/useProgress";
 import { CheckinDialog } from "@/components/CheckinDialog";
+import { ResourcesHeader } from "@/components/gamification/ResourcesHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
