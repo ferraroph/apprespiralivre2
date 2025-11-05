@@ -207,6 +207,50 @@ supabase functions deploy send-notification
 
 **Desenvolvido com Lovable Cloud & Lovable AI**
 
+---
+
+## 📱 PWA (Progressive Web App)
+
+O Respira Livre é um **PWA completo** que pode ser instalado como um app nativo em qualquer plataforma.
+
+### ✅ Funcionalidades PWA Implementadas
+
+- **🚀 Instalação Automática**: Prompts inteligentes baseados na plataforma
+- **📱 Cross-Platform**: iOS 16.4+, Android, Windows, Mac
+- **🔔 Notificações Push**: Sistema completo com Web Push API
+- **📴 Funcionamento Offline**: Acesso total sem internet
+- **⚡ Performance Nativa**: Carregamento instantâneo
+- **🎯 UX Adaptativa**: Interface específica por plataforma
+
+### 📋 Suporte por Plataforma
+
+| Plataforma | Status | Método de Instalação |
+|-----------|--------|-------------------|
+| **iOS Safari 16.4+** | ✅ Full | Manual (Share → Add to Home Screen) |
+| **Android Chrome** | ✅ Full | Automático (beforeinstallprompt) |
+| **Windows Chrome/Edge** | ✅ Full | Automático (Menu → Install) |
+| **macOS Safari/Chrome** | ✅ Full | Automático/Manual |
+
+### 🛠 Implementação Técnica
+
+- **Hook Principal**: `usePWAInstall()` - Detecção e controle de instalação
+- **Componentes**: InstallPrompt, IOSInstallInstructions, NotificationSetupFlow
+- **Analytics**: Tracking completo de conversão e engajamento
+- **Utilitários**: Detecção de plataforma, verificação de suporte
+
+### 📊 Teste e Debug
+
+Em modo de desenvolvimento, acesse **Settings → PWA Test Suite** para:
+- Verificar status de instalação
+- Testar prompts de instalação
+- Validar suporte de notificações
+- Diagnosticar problemas de plataforma
+
+### 📚 Documentação PWA
+
+- **[Setup Guide](docs/PWA-SETUP.md)**: Implementação técnica completa
+- **[Platform Support](docs/PLATFORM-SUPPORT.md)**: Matriz de compatibilidade  
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)**: Soluções para problemas comuns
 
 ---
 

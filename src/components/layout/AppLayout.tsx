@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileNav } from "./MobileNav";
 import { DesktopSidebar } from "./DesktopSidebar";
+import { InstallPrompt } from "../InstallPrompt";
 import { Loader2 } from "lucide-react";
 
 interface AppLayoutProps {
@@ -75,7 +76,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen w-full relative">
       <DesktopSidebar />
       <main className="pb-20 md:pb-0 md:pl-64 min-h-screen">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -83,6 +84,20 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </main>
       <MobileNav />
+      
+      {/* PWA Install Prompt - positioned with high z-index */}
+      <InstallPrompt 
+        autoShow={true}
+        delay={5000} // Show after 5 seconds for better UX
+        onInstallSuccess={() => {
+          // Track installation success
+          console.log('PWA installed successfully');
+        }}
+        onDismiss={() => {
+          // Track dismissal
+          console.log('PWA install prompt dismissed');
+        }}
+      />
     </div>
   );
 }
