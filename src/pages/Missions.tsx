@@ -1,4 +1,3 @@
-import { AppLayout } from "@/components/layout/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -18,8 +17,7 @@ export default function Missions() {
   ];
 
   return (
-    <AppLayout>
-      <div className="container max-w-4xl mx-auto p-6 space-y-6">
+    <div className="container max-w-4xl mx-auto p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold mb-2">🎯 Missões</h1>
           <p className="text-muted-foreground">Complete missões para ganhar XP e recompensas</p>
@@ -113,6 +111,5 @@ export default function Missions() {
           </div>
         </div>
       </div>
-    </AppLayout>
   );
 }

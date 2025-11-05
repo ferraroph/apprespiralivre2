@@ -18,6 +18,7 @@ import AICoach from "./pages/AICoach";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import Onboarding from "./pages/Onboarding";
+import Missions from "./pages/Missions";
 import NotFound from "./pages/NotFound";
 
 console.log('[APP] Inicializando aplicação');
@@ -72,6 +73,7 @@ const App = () => {
               <Route path="/community" element={<AppLayout><CommunityReal /></AppLayout>} />
               <Route path="/squads" element={<AppLayout><Squads /></AppLayout>} />
               <Route path="/squads/:id" element={<AppLayout><SquadDetailPage /></AppLayout>} />
+              <Route path="/missions" element={<AppLayout><Missions /></AppLayout>} />
               <Route path="/ai-coach" element={<AppLayout><AICoach /></AppLayout>} />
               <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
               <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
