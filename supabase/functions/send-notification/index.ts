@@ -372,7 +372,7 @@ async function sendNotificationToUser(
       // Get OAuth2 token from service account
       const accessToken = await getAccessToken();
       
-      const response = await fetch("https://fcm.googleapis.com/v1/projects/respira-livre-app/messages:send", {
+      const response = await fetch("https://fcm.googleapis.com/v1/projects/respira-livre-43a28/messages:send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
