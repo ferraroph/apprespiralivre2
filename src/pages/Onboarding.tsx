@@ -177,7 +177,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <main className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-2xl p-8 card-premium card-depth animate-scale-in">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary text-glow mb-2">
@@ -330,6 +330,6 @@ export default function Onboarding() {
           </div>
         )}
       </Card>
-    </div>
+    </main>
   );
 }
