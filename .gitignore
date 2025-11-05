@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Environments
+
+respira-livre-43a28-firebase-adminsdk-fbsvc-422834a305.json
