@@ -9,8 +9,7 @@ const navItems = [
   { icon: Home, label: "Início", path: "/" },
   { icon: Brain, label: "Coach IA", path: "/ai-coach" },
   { icon: Trophy, label: "Ligas", path: "/leagues" },
-  { icon: UsersRound, label: "Squads", path: "/squads" },
-  { icon: Users, label: "Comunidade", path: "/community" },
+  { icon: BookOpen, label: "Missões", path: "/missions" },
   { icon: User, label: "Perfil", path: "/profile" },
 ];
 
