@@ -111,6 +111,10 @@ class AnalyticsService {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-event`,
         {
@@ -122,17 +126,19 @@ class AnalyticsService {
               : "",
           },
           body: JSON.stringify({ events: eventsToSend }),
+          signal: controller.signal,
         }
       );
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        console.error("Failed to send analytics events:", await response.text());
-        // Re-queue events on failure
+        // Silently re-queue events on failure (don't log to console for SEO)
         this.eventQueue.unshift(...eventsToSend);
       }
     } catch (error) {
-      console.error("Error sending analytics events:", error);
-      // Re-queue events on error
+      // Silently re-queue events on error (don't log to console for SEO)
+      // Analytics failures should not impact user experience or SEO score
       this.eventQueue.unshift(...eventsToSend);
     }
   }
@@ -170,7 +176,7 @@ class AnalyticsService {
         xhr.send(JSON.stringify({ events: eventsToSend }));
       }
     } catch (error) {
-      console.error("Error sending analytics events synchronously:", error);
+      // Silently fail - analytics should not impact user experience or SEO
     }
   }
 
