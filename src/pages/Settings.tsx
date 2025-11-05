@@ -270,12 +270,10 @@ export default function Settings() {
         <NotificationTestButton />
       </Card>
 
-      {/* PWA Test Suite - Only show in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="animate-slide-up" style={{ animationDelay: "0.25s" }}>
-          <PWATestSuite />
-        </div>
-      )}
+      {/* PWA Test Suite */}
+      <div className="animate-slide-up" style={{ animationDelay: "0.25s" }}>
+        <PWATestSuite />
+      </div>
 
       <Card className="card-premium p-6 animate-slide-up" style={{ animationDelay: "0.3s" }}>
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
