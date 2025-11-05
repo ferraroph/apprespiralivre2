@@ -44,32 +44,58 @@ const getStorageKey = (platform: Platform): string => {
 };
 
 export const usePWAInstall = (): PWAInstallHook => {
+  console.log('[PWA] Hook inicializado');
+  
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled] = useState(isPWAInstalled());
   const platform = detectPlatform();
 
-  // Debug logs
-  console.log('[PWA] Hook initialized:', { platform, isInstalled, isPWAInstalled: isPWAInstalled() });
+  console.log('[PWA] Estados iniciais:', { 
+    platform, 
+    isInstalled, 
+    isPWAInstalled: isPWAInstalled(),
+    hasDeferredPrompt: !!deferredPrompt,
+    isInstallable
+  });
 
   // Check if user has dismissed the prompt before
   const isDismissed = localStorage.getItem(getStorageKey(platform)) === 'true';
+  console.log('[PWA] Verificação de dismissal:', { platform, isDismissed });
   
   const canShowPromptValue = useMemo(() => {
-    if (isInstalled) return false;
-    if (isDismissed) return false;
+    console.log('[PWA] Calculando canShowPromptValue:', { 
+      isInstalled, 
+      isDismissed, 
+      platform,
+      hasDeferredPrompt: !!deferredPrompt
+    });
+    
+    if (isInstalled) {
+      console.log('[PWA] Não pode mostrar: app já instalado');
+      return false;
+    }
+    if (isDismissed) {
+      console.log('[PWA] Não pode mostrar: usuário já dispensou');
+      return false;
+    }
     
     // Use the utility function but also check for deferredPrompt for non-iOS
     const basicCanShow = canShowPrompt();
+    console.log('[PWA] basicCanShow:', basicCanShow);
     if (!basicCanShow) return false;
     
     // For iOS, we can always show manual instructions if supported
     if (platform === 'ios') {
-      return isIOSSupported();
+      const iosSupported = isIOSSupported();
+      console.log('[PWA] iOS suportado:', iosSupported);
+      return iosSupported;
     }
     
     // For other platforms, we need the beforeinstallprompt event
-    return !!deferredPrompt;
+    const canShow = !!deferredPrompt;
+    console.log('[PWA] Pode mostrar (não-iOS):', canShow);
+    return canShow;
   }, [isInstalled, isDismissed, platform, deferredPrompt]);
 
   useEffect(() => {

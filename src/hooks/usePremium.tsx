@@ -11,6 +11,8 @@ interface PremiumStatus {
 }
 
 export function usePremium(): PremiumStatus {
+  console.log('[PREMIUM] Hook inicializado');
+  
   const { user } = useAuth();
   const [premiumStatus, setPremiumStatus] = useState<PremiumStatus>({
     isPremium: false,
@@ -20,8 +22,17 @@ export function usePremium(): PremiumStatus {
     loading: true,
   });
 
+  console.log('[PREMIUM] Estados iniciais:', { 
+    hasUser: !!user, 
+    userId: user?.id,
+    premiumStatus 
+  });
+
   useEffect(() => {
+    console.log('[PREMIUM] Effect executado:', { hasUser: !!user, userId: user?.id });
+    
     if (!user) {
+      console.log('[PREMIUM] Usuário não autenticado, resetando status premium');
       setPremiumStatus({
         isPremium: false,
         premiumUntil: null,
@@ -33,6 +44,8 @@ export function usePremium(): PremiumStatus {
     }
 
     const fetchPremiumStatus = async () => {
+      console.log('[PREMIUM] Buscando status premium do usuário:', user.id);
+      
       try {
         const { data: profile, error } = await supabase
           .from("profiles")
@@ -42,20 +55,31 @@ export function usePremium(): PremiumStatus {
 
         if (error) throw error;
 
+        console.log('[PREMIUM] Dados do perfil obtidos:', profile);
+
         // Check if premium is active
         const isPremium = profile?.premium_until
           ? new Date(profile.premium_until) > new Date()
           : false;
 
-        setPremiumStatus({
+        console.log('[PREMIUM] Status premium calculado:', { 
+          isPremium, 
+          premiumUntil: profile?.premium_until,
+          now: new Date().toISOString()
+        });
+
+        const newStatus = {
           isPremium,
           premiumUntil: profile?.premium_until || null,
           streakFreezeCount: profile?.streak_freeze_count || 0,
           adsRemoved: profile?.ads_removed || false,
           loading: false,
-        });
+        };
+
+        console.log('[PREMIUM] Atualizando status:', newStatus);
+        setPremiumStatus(newStatus);
       } catch (error) {
-        console.error("Error fetching premium status:", error);
+        console.error("[PREMIUM] Erro ao buscar status premium:", error);
         setPremiumStatus({
           isPremium: false,
           premiumUntil: null,

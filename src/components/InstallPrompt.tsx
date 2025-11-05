@@ -26,6 +26,8 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
   autoShow = true,
   delay = 3000
 }) => {
+  console.log('[UI] InstallPrompt inicializado');
+  
   const [isOpen, setIsOpen] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const { 
@@ -36,48 +38,58 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
     canShowPrompt 
   } = usePWAInstall();
 
-  // Debug logs
-  console.log('[InstallPrompt] Rendered with:', { 
+  console.log('[UI] InstallPrompt estado:', { 
     isInstallable, 
     platform, 
     canShowPrompt, 
     autoShow, 
-    isOpen 
+    isOpen,
+    isInstalling
   });
 
   // Auto-show logic with delay
   useEffect(() => {
-    console.log('[InstallPrompt] Auto-show check:', { autoShow, isInstallable, canShowPrompt, delay });
+    console.log('[UI] InstallPrompt verificação de auto-show:', { 
+      autoShow, 
+      isInstallable, 
+      canShowPrompt, 
+      delay 
+    });
+    
     if (autoShow && isInstallable && canShowPrompt) {
-      console.log(`[InstallPrompt] Setting timer for ${delay}ms`);
+      console.log(`[UI] InstallPrompt configurando timer para ${delay}ms`);
       const timer = setTimeout(() => {
-        console.log('[InstallPrompt] Timer fired, opening prompt');
+        console.log('[UI] InstallPrompt timer disparado - abrindo prompt');
         setIsOpen(true);
       }, delay);
 
       return () => {
-        console.log('[InstallPrompt] Clearing timer');
+        console.log('[UI] InstallPrompt limpando timer');
         clearTimeout(timer);
       };
     }
   }, [autoShow, isInstallable, canShowPrompt, delay]);
 
   const handleInstall = async () => {
+    console.log('[UI] InstallPrompt iniciando instalação');
     setIsInstalling(true);
     try {
       const success = await showInstallPrompt();
+      console.log('[UI] InstallPrompt resultado da instalação:', success);
       if (success) {
+        console.log('[UI] InstallPrompt instalação bem-sucedida - fechando prompt');
         setIsOpen(false);
         onInstallSuccess?.();
       }
     } catch (error) {
-      console.error('Install failed:', error);
+      console.error('[UI] InstallPrompt falha na instalação:', error);
     } finally {
       setIsInstalling(false);
     }
   };
 
   const handleDismiss = () => {
+    console.log('[UI] InstallPrompt usuário dispensou o prompt');
     dismissPrompt();
     setIsOpen(false);
     onDismiss?.();

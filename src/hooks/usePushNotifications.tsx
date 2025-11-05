@@ -13,45 +13,67 @@ interface PushSubscriptionJSON {
 }
 
 export function usePushNotifications() {
+  console.log('[NOTIFICATIONS] Hook inicializado');
+  
   const { user } = useAuth();
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [pushSubscription, setPushSubscription] = useState<PushSubscription | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('[NOTIFICATIONS] Estados iniciais:', { 
+    hasUser: !!user, 
+    permission, 
+    hasPushSubscription: !!pushSubscription, 
+    loading, 
+    error 
+  });
+
   // Check current notification permission
   useEffect(() => {
+    console.log('[NOTIFICATIONS] Verificando permissão atual');
     if ("Notification" in window) {
-      setPermission(Notification.permission);
+      const currentPermission = Notification.permission;
+      console.log('[NOTIFICATIONS] Permissão atual:', currentPermission);
+      setPermission(currentPermission);
+    } else {
+      console.warn('[NOTIFICATIONS] Notificações não suportadas neste navegador');
     }
   }, []);
 
   // Request notification permission and subscribe to Web Push
   const requestPermission = async () => {
+    console.log('[NOTIFICATIONS] Iniciando solicitação de permissão');
+    
     if (!("Notification" in window)) {
+      console.error('[NOTIFICATIONS] Notificações não suportadas no navegador');
       setError("Este navegador não suporta notificações");
       toast.error("Notificações não são suportadas neste navegador");
       return false;
     }
 
     if (!("serviceWorker" in navigator)) {
+      console.error('[NOTIFICATIONS] Service Worker não suportado');
       setError("Service Worker não suportado");
       toast.error("Seu navegador não suporta notificações push");
       return false;
     }
 
     if (!user) {
+      console.error('[NOTIFICATIONS] Usuário não autenticado');
       setError("Usuário precisa estar autenticado");
       toast.error("Você precisa estar autenticado");
       return false;
     }
 
+    console.log('[NOTIFICATIONS] Todas as verificações passaram, iniciando processo');
     setLoading(true);
     setError(null);
 
     try {
       // Check if permission was previously denied
       if (Notification.permission === "denied") {
+        console.warn('[NOTIFICATIONS] Permissão foi negada anteriormente');
         setError("Notificações bloqueadas");
         toast.error("Notificações foram bloqueadas. Habilite nas configurações do navegador.", {
           duration: 8000,
@@ -61,10 +83,13 @@ export function usePushNotifications() {
       }
 
       // Request permission
+      console.log('[NOTIFICATIONS] Solicitando permissão ao usuário');
       const permission = await Notification.requestPermission();
+      console.log('[NOTIFICATIONS] Resposta da permissão:', permission);
       setPermission(permission);
 
       if (permission !== "granted") {
+        console.warn('[NOTIFICATIONS] Permissão negada pelo usuário');
         setError("Permissão negada");
         toast.error("Permissão de notificação negada");
         setLoading(false);
@@ -86,7 +111,7 @@ export function usePushNotifications() {
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidKey as any
+        applicationServerKey: vapidKey as BufferSource
       });
 
       console.log('[Push] Push subscription created:', subscription);
@@ -113,7 +138,7 @@ export function usePushNotifications() {
   const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
-      .replace(/\-/g, '+')
+      .replace(/-/g, '+')
       .replace(/_/g, '/');
 
     const rawData = window.atob(base64);

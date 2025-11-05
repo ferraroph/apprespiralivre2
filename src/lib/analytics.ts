@@ -15,31 +15,45 @@ class AnalyticsService {
   private isOnline = true;
 
   constructor() {
+    console.log('[ANALYTICS] Inicializando serviço de analytics');
+    console.log('[ANALYTICS] Configurações:', { 
+      batchSize: this.batchSize, 
+      batchInterval: this.batchInterval 
+    });
+    
     // Monitor online/offline status
     if (typeof window !== "undefined") {
+      console.log('[ANALYTICS] Configurando listeners de navegador');
       window.addEventListener("online", () => {
+        console.log('[ANALYTICS] Navegador voltou online - fazendo flush dos eventos');
         this.isOnline = true;
         this.flush();
       });
 
       window.addEventListener("offline", () => {
+        console.log('[ANALYTICS] Navegador ficou offline - pausando envio de eventos');
         this.isOnline = false;
       });
 
       // Start batch timer
+      console.log('[ANALYTICS] Iniciando timer de batch');
       this.startBatchTimer();
 
       // Flush on page unload
       window.addEventListener("beforeunload", () => {
+        console.log('[ANALYTICS] Página sendo descarregada - fazendo flush síncrono');
         this.flushSync();
       });
 
       // Flush on visibility change (when user leaves tab)
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
+          console.log('[ANALYTICS] Aba ficou oculta - fazendo flush síncrono');
           this.flushSync();
         }
       });
+    } else {
+      console.warn('[ANALYTICS] Window não disponível - listeners não configurados');
     }
   }
 
@@ -47,6 +61,8 @@ class AnalyticsService {
    * Track an analytics event
    */
   trackEvent(eventName: string, properties?: Record<string, any>) {
+    console.log('[ANALYTICS] Rastreando evento:', { eventName, properties });
+    
     const event: AnalyticsEvent = {
       event_name: eventName,
       properties: properties || {},
@@ -54,9 +70,14 @@ class AnalyticsService {
     };
 
     this.eventQueue.push(event);
+    console.log('[ANALYTICS] Evento adicionado à fila:', { 
+      queueLength: this.eventQueue.length,
+      batchSize: this.batchSize 
+    });
 
     // Flush if batch size reached
     if (this.eventQueue.length >= this.batchSize) {
+      console.log('[ANALYTICS] Tamanho do batch atingido - fazendo flush automático');
       this.flush();
     }
   }

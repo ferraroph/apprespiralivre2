@@ -9,6 +9,8 @@ import { CheckinDialog } from "@/components/CheckinDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
+  console.log('[PAGE] Dashboard inicializado');
+  
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { profile, progress, loading: dataLoading } = useProgress();
@@ -20,15 +22,28 @@ export default function Dashboard() {
     seconds: 0,
   });
 
+  console.log('[PAGE] Dashboard estados:', { 
+    hasUser: !!user, 
+    authLoading, 
+    dataLoading,
+    hasProfile: !!profile,
+    hasProgress: !!progress,
+    checkinOpen
+  });
+
   useEffect(() => {
+    console.log('[PAGE] Dashboard verificando autenticação:', { authLoading, hasUser: !!user });
     if (!authLoading && !user) {
+      console.log('[PAGE] Dashboard usuário não autenticado - redirecionando para /auth');
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
 
   const startDate = profile?.quit_date ? new Date(profile.quit_date) : new Date();
+  console.log('[PAGE] Dashboard data de início:', startDate);
 
   useEffect(() => {
+    console.log('[PAGE] Dashboard configurando timer de tempo decorrido');
     const interval = setInterval(() => {
       const now = new Date();
       const diff = now.getTime() - startDate.getTime();
@@ -41,8 +56,11 @@ export default function Dashboard() {
       setTimeElapsed({ days, hours, minutes, seconds });
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      console.log('[PAGE] Dashboard limpando timer de tempo decorrido');
+      clearInterval(interval);
+    };
+  }, [startDate]);
 
   if (authLoading || dataLoading) {
     return (

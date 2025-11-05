@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 export default function Auth() {
+  console.log('[PAGE] Auth inicializado');
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -16,11 +18,18 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  console.log('[PAGE] Auth estados:', { isLoading, isLogin, email: !!email, password: !!password });
+
   useEffect(() => {
+    console.log('[PAGE] Auth verificando sessão existente');
+    
     const checkAuthAndProfile = async () => {
+      console.log('[PAGE] Auth obtendo sessão atual');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[PAGE] Auth sessão obtida:', { hasSession: !!session, userId: session?.user?.id });
       
       if (session) {
+        console.log('[PAGE] Auth verificando perfil do usuário');
         // Check if user has completed onboarding
         const { data: profile } = await supabase
           .from("profiles")
@@ -28,6 +37,7 @@ export default function Auth() {
           .eq("user_id", session.user.id)
           .single();
 
+        console.log('[PAGE] Auth perfil obtido:', { hasProfile: !!profile });
         if (profile) {
           navigate("/");
         } else {

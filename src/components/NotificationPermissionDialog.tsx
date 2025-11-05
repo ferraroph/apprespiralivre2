@@ -22,20 +22,35 @@ export function NotificationPermissionDialog({
   onOpenChange,
   onRequestPermission,
 }: NotificationPermissionDialogProps) {
+  console.log('[UI] NotificationPermissionDialog inicializado', { open });
+  
   const [userAgent, setUserAgent] = useState("");
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
+    console.log('[UI] NotificationPermissionDialog detectando plataforma');
     const ua = navigator.userAgent;
+    console.log('[UI] User Agent:', ua);
+    
     setUserAgent(ua);
-    setIsIOS(/iPad|iPhone|iPod/.test(ua));
-    setIsAndroid(/Android/.test(ua));
+    const iOS = /iPad|iPhone|iPod/.test(ua);
+    const android = /Android/.test(ua);
+    
+    setIsIOS(iOS);
+    setIsAndroid(android);
+    
+    console.log('[UI] NotificationPermissionDialog plataforma detectada:', { 
+      isIOS: iOS, 
+      isAndroid: android 
+    });
   }, []);
 
   const handleEnable = () => {
+    console.log('[UI] NotificationPermissionDialog usuário tentou ativar notificações');
     onRequestPermission();
     onOpenChange(false);
+    console.log('[UI] NotificationPermissionDialog fechando dialog');
   };
 
   return (

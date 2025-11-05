@@ -5,6 +5,10 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+console.log('[SUPABASE] Inicializando cliente Supabase');
+console.log('[SUPABASE] URL:', SUPABASE_URL);
+console.log('[SUPABASE] Tem chave pública?', !!SUPABASE_PUBLISHABLE_KEY);
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
@@ -22,4 +26,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       'X-Client-Info': 'respira-livre-web',
     },
   },
+});
+
+console.log('[SUPABASE] Cliente Supabase criado com sucesso');
+
+// Log auth state changes for debugging
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('[SUPABASE] Mudança de estado de autenticação:', {
+    event,
+    hasSession: !!session,
+    userId: session?.user?.id,
+    email: session?.user?.email,
+  });
 });

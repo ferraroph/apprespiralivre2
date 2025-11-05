@@ -11,11 +11,17 @@ declare global {
  * Detect the current platform based on user agent
  */
 export function detectPlatform(): Platform {
+  console.log('[PLATFORM] Detectando plataforma');
+  
   const userAgent = navigator.userAgent.toLowerCase();
+  console.log('[PLATFORM] User Agent:', userAgent);
+  
   const isIOS = /iphone|ipad|ipod/.test(userAgent);
   const isAndroid = /android/.test(userAgent);
   const isWindows = /windows/.test(userAgent);
   const isMac = /macintosh|mac os x/.test(userAgent);
+
+  console.log('[PLATFORM] Detecções:', { isIOS, isAndroid, isWindows, isMac });
 
   let platform: Platform;
   if (isIOS) platform = 'ios';
@@ -24,7 +30,7 @@ export function detectPlatform(): Platform {
   else if (isMac) platform = 'mac';
   else platform = 'other';
 
-  console.log('[Platform Detection]', { userAgent, platform });
+  console.log('[PLATFORM] Plataforma detectada:', platform);
   return platform;
 }
 
@@ -32,30 +38,40 @@ export function detectPlatform(): Platform {
  * Check if iOS version supports PWA installation (16.4+)
  */
 export function isIOSSupported(): boolean {
+  console.log('[PLATFORM] Verificando suporte iOS para PWA');
+  
   const userAgent = navigator.userAgent;
   const isIOS = /iphone|ipad|ipod/i.test(userAgent);
   
+  console.log('[PLATFORM] É iOS?', isIOS);
   if (!isIOS) return false;
   
   const version = getIOSVersion();
+  console.log('[PLATFORM] Versão iOS:', version);
   if (version === null) return false;
   
   // iOS 16.4+ required for PWA support
-  return version >= 16.4;
+  const isSupported = version >= 16.4;
+  console.log('[PLATFORM] iOS suporta PWA (16.4+)?', isSupported);
+  return isSupported;
 }
 
 /**
  * Check if PWA is currently installed
  */
 export function isPWAInstalled(): boolean {
+  console.log('[PLATFORM] Verificando se PWA está instalado');
+  
   // Check if running in standalone mode (PWA installed)
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  console.log('[PLATFORM] Display mode standalone?', isStandalone);
   
   // Check for iOS PWA using navigator.standalone
   const isIOSStandalone = 'standalone' in navigator && navigator.standalone === true;
+  console.log('[PLATFORM] iOS standalone?', isIOSStandalone);
   
   const result = isStandalone || isIOSStandalone;
-  console.log('[PWA Installation Check]', { isStandalone, isIOSStandalone, result });
+  console.log('[PLATFORM] PWA está instalado?', result);
   
   return result;
 }
