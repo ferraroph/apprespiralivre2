@@ -49,6 +49,9 @@ export const usePWAInstall = (): PWAInstallHook => {
   const [isInstalled] = useState(isPWAInstalled());
   const platform = detectPlatform();
 
+  // Debug logs
+  console.log('[PWA] Hook initialized:', { platform, isInstalled, isPWAInstalled: isPWAInstalled() });
+
   // Check if user has dismissed the prompt before
   const isDismissed = localStorage.getItem(getStorageKey(platform)) === 'true';
   
@@ -73,6 +76,7 @@ export const usePWAInstall = (): PWAInstallHook => {
     const handleBeforeInstallPrompt = (e: Event) => {
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
+      console.log('[PWA] beforeinstallprompt fired!', e);
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
@@ -90,6 +94,7 @@ export const usePWAInstall = (): PWAInstallHook => {
 
     // Check if PWA is installable on iOS (manual process)
     if (platform === 'ios' && isIOSSupported() && !isInstalled) {
+      console.log('[PWA] iOS PWA installable detected');
       setIsInstallable(true);
     }
 

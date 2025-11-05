@@ -36,14 +36,29 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
     canShowPrompt 
   } = usePWAInstall();
 
+  // Debug logs
+  console.log('[InstallPrompt] Rendered with:', { 
+    isInstallable, 
+    platform, 
+    canShowPrompt, 
+    autoShow, 
+    isOpen 
+  });
+
   // Auto-show logic with delay
   useEffect(() => {
+    console.log('[InstallPrompt] Auto-show check:', { autoShow, isInstallable, canShowPrompt, delay });
     if (autoShow && isInstallable && canShowPrompt) {
+      console.log(`[InstallPrompt] Setting timer for ${delay}ms`);
       const timer = setTimeout(() => {
+        console.log('[InstallPrompt] Timer fired, opening prompt');
         setIsOpen(true);
       }, delay);
 
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('[InstallPrompt] Clearing timer');
+        clearTimeout(timer);
+      };
     }
   }, [autoShow, isInstallable, canShowPrompt, delay]);
 

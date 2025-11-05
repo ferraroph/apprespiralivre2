@@ -17,11 +17,15 @@ export function detectPlatform(): Platform {
   const isWindows = /windows/.test(userAgent);
   const isMac = /macintosh|mac os x/.test(userAgent);
 
-  if (isIOS) return 'ios';
-  if (isAndroid) return 'android';
-  if (isWindows) return 'windows';
-  if (isMac) return 'mac';
-  return 'other';
+  let platform: Platform;
+  if (isIOS) platform = 'ios';
+  else if (isAndroid) platform = 'android';
+  else if (isWindows) platform = 'windows';
+  else if (isMac) platform = 'mac';
+  else platform = 'other';
+
+  console.log('[Platform Detection]', { userAgent, platform });
+  return platform;
 }
 
 /**
@@ -45,16 +49,15 @@ export function isIOSSupported(): boolean {
  */
 export function isPWAInstalled(): boolean {
   // Check if running in standalone mode (PWA installed)
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    return true;
-  }
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   
   // Check for iOS PWA using navigator.standalone
-  if ('standalone' in navigator && navigator.standalone === true) {
-    return true;
-  }
+  const isIOSStandalone = 'standalone' in navigator && navigator.standalone === true;
   
-  return false;
+  const result = isStandalone || isIOSStandalone;
+  console.log('[PWA Installation Check]', { isStandalone, isIOSStandalone, result });
+  
+  return result;
 }
 
 /**

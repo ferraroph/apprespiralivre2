@@ -18,6 +18,9 @@ export const PWATestSuite: React.FC = () => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
+  // Debug log
+  console.log('[PWATestSuite] Component rendered');
+
   const { 
     isInstalled, 
     isInstallable, 

@@ -11,6 +11,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  console.log('🚀 [AppLayout] Componente inicializado');
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -75,6 +76,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     return null;
   }
 
+  console.log('✅ [AppLayout] Renderizando interface autenticada com PWA components');
+  
   return (
     <div className="min-h-screen w-full relative">
       <DesktopSidebar />
@@ -91,11 +94,11 @@ export function AppLayout({ children }: AppLayoutProps) {
         delay={5000} // Show after 5 seconds for better UX
         onInstallSuccess={() => {
           // Track installation success
-          console.log('PWA installed successfully');
+          console.log('🎉 PWA installed successfully');
         }}
         onDismiss={() => {
           // Track dismissal
-          console.log('PWA install prompt dismissed');
+          console.log('❌ PWA install prompt dismissed');
         }}
       />
     </div>
