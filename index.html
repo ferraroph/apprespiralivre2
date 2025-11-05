@@ -44,5 +44,25 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Preload critical resources -->
+    <script>
+      // Preload main CSS asynchronously to avoid render blocking
+      const cssLinks = document.querySelectorAll('link[rel="stylesheet"]');
+      cssLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.includes('index-') && href.endsWith('.css')) {
+          const preloadLink = document.createElement('link');
+          preloadLink.rel = 'preload';
+          preloadLink.as = 'style';
+          preloadLink.href = href;
+          preloadLink.onload = function() {
+            link.media = 'all';
+          };
+          document.head.insertBefore(preloadLink, link);
+          link.media = 'print';
+        }
+      });
+    </script>
   </body>
 </html>
