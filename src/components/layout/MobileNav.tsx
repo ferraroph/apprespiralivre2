@@ -1,4 +1,4 @@
-import { Home, Trophy, BookOpen, Users, User, UsersRound, Shield } from "lucide-react";
+import { Home, Trophy, BookOpen, Users, User, UsersRound, Shield, Brain } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { icon: Home, label: "Início", path: "/" },
+  { icon: Brain, label: "Coach IA", path: "/ai-coach" },
   { icon: Trophy, label: "Ligas", path: "/leagues" },
   { icon: UsersRound, label: "Squads", path: "/squads" },
   { icon: Users, label: "Comunidade", path: "/community" },
