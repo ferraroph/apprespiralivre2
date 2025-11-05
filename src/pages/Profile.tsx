@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Award, Settings, LogOut, Crown, Zap, EyeOff, ShoppingBag, Bell, BellOff } from "lucide-react";
 import { PurchaseDialog } from "@/components/PurchaseDialog";
 import { NotificationPermissionDialog } from "@/components/NotificationPermissionDialog";
+import { NotificationTestButton } from "@/components/NotificationTestButton";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { usePremium } from "@/hooks/usePremium";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -269,6 +270,11 @@ export default function Profile() {
               <p>• Lembretes diários de check-in</p>
               <p>• Alertas quando sua sequência estiver em risco</p>
               <p>• Notificações de conquistas desbloqueadas</p>
+            </div>
+
+            {/* Botão de Teste de Notificações */}
+            <div className="mt-4 pt-4 border-t">
+              <NotificationTestButton />
             </div>
           </div>
         </Card>
