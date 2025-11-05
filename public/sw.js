@@ -1,8 +1,9 @@
 // Service Worker for asset caching
-// Version: 1.0.0
+// Version: 2.0.0 - Enhanced caching with long-term cache strategy
 
-const CACHE_VERSION = 'respira-livre-v1';
+const CACHE_VERSION = 'respira-livre-v2';
 const CACHE_NAME = `${CACHE_VERSION}-assets`;
+const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -43,7 +44,9 @@ self.addEventListener('activate', (event) => {
           cacheNames
             .filter((cacheName) => {
               // Delete old cache versions
-              return cacheName.startsWith('respira-livre-') && cacheName !== CACHE_NAME;
+              return cacheName.startsWith('respira-livre-') && 
+                     cacheName !== CACHE_NAME && 
+                     cacheName !== RUNTIME_CACHE;
             })
             .map((cacheName) => {
               console.log('[Service Worker] Deleting old cache:', cacheName);
@@ -58,7 +61,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache with network fallback
+// Fetch event - Aggressive cache-first strategy for static assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -68,8 +71,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip cross-origin requests
-  if (url.origin !== self.location.origin) {
+  // Skip cross-origin requests (except fonts/images from CDN)
+  if (url.origin !== self.location.origin && !url.pathname.match(/\.(woff2?|ttf|eot|png|jpg|jpeg|svg|webp)$/)) {
     return;
   }
 
@@ -80,42 +83,68 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          console.log('[Service Worker] Serving from cache:', request.url);
-          return cachedResponse;
-        }
+  // CACHE-FIRST strategy for static assets (JS, CSS, fonts, images)
+  // This provides instant loading on repeat visits
+  if (shouldCache(url)) {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then((cache) => {
+        return cache.match(request).then((cachedResponse) => {
+          // Return cached immediately if available
+          if (cachedResponse) {
+            console.log('[Service Worker] Cache hit:', request.url);
+            
+            // Update cache in background (stale-while-revalidate)
+            fetch(request)
+              .then((freshResponse) => {
+                if (freshResponse && freshResponse.status === 200) {
+                  cache.put(request, freshResponse.clone());
+                  console.log('[Service Worker] Updated cache:', request.url);
+                }
+              })
+              .catch(() => {
+                // Silently fail - we have cached version
+              });
+            
+            return cachedResponse;
+          }
 
-        // Not in cache, fetch from network
-        return fetch(request)
-          .then((response) => {
-            // Don't cache non-successful responses
+          // Not in cache, fetch and cache
+          return fetch(request).then((response) => {
             if (!response || response.status !== 200 || response.type === 'error') {
               return response;
             }
 
-            // Clone the response
             const responseToCache = response.clone();
-
-            // Cache static assets (JS, CSS, images, fonts)
-            if (shouldCache(url)) {
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  console.log('[Service Worker] Caching new resource:', request.url);
-                  cache.put(request, responseToCache);
-                });
-            }
-
-            return response;
-          })
-          .catch((error) => {
-            console.error('[Service Worker] Fetch failed:', error);
+            cache.put(request, responseToCache);
+            console.log('[Service Worker] Cached new resource:', request.url);
             
-            // Return offline page if available
+            return response;
+          }).catch((error) => {
+            console.error('[Service Worker] Fetch failed:', error);
             return caches.match('/index.html');
           });
+        });
+      })
+    );
+    return;
+  }
+
+  // Network-first for HTML pages
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(request).then((cachedResponse) => {
+          return cachedResponse || caches.match('/index.html');
+        });
       })
   );
 });
