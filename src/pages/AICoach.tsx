@@ -77,8 +77,14 @@ export default function AICoach() {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to get AI response");
+        if (response.status === 429) {
+          throw new Error("Muitas requisições. Por favor, aguarde um momento.");
+        }
+        if (response.status === 402) {
+          throw new Error("Créditos da IA esgotados. Entre em contato com o suporte.");
+        }
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Falha ao obter resposta da IA");
       }
 
       // Handle SSE streaming

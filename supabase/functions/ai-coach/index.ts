@@ -93,7 +93,7 @@ serve(async (req) => {
     
     if (body.includeContext) {
       const [profileResult, progressResult] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("profiles").select("*").eq("user_id", user.id).single(),
         supabase.from("progress").select("*").eq("user_id", user.id).single(),
       ]);
 
@@ -136,7 +136,7 @@ serve(async (req) => {
         "Authorization": `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
-        model: "gemini-2.0-flash-exp",
+        model: "google/gemini-2.5-flash", // Lovable AI default model
         messages: [
           { role: "system", content: systemPrompt },
           ...chatHistory,
@@ -146,8 +146,26 @@ serve(async (req) => {
     });
 
     if (!aiResponse.ok) {
+      if (aiResponse.status === 429) {
+        return createErrorResponse(
+          "Muitas requisições. Por favor, aguarde um momento.",
+          ErrorCodes.RATE_LIMIT_EXCEEDED,
+          429,
+          undefined,
+          corsHeaders
+        );
+      }
+      if (aiResponse.status === 402) {
+        return createErrorResponse(
+          "Créditos da IA esgotados.",
+          ErrorCodes.INTERNAL_ERROR,
+          402,
+          undefined,
+          corsHeaders
+        );
+      }
       const errorText = await aiResponse.text();
-      console.error("Lovable AI error:", errorText);
+      console.error("Lovable AI error:", aiResponse.status, errorText);
       throw new Error("AI service unavailable");
     }
 

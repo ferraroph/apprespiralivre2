@@ -1,4 +1,7 @@
 project_id = "pyfgepdbxhbofrgainou"
 
+[functions.ai-coach]
+verify_jwt = true
+
 [functions.checkin]
 verify_jwt = true
