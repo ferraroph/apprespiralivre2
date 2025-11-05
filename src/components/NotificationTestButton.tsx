@@ -9,7 +9,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 export function NotificationTestButton() {
   const [testing, setTesting] = useState(false);
   const { user } = useAuth();
-  const { permission, requestPermission, fcmToken, loading: permissionLoading } = usePushNotifications();
+  const { permission, requestPermission, pushSubscription, loading: permissionLoading } = usePushNotifications();
 
   // Teste completo de notificação push real
   const testPushNotification = async () => {
@@ -33,26 +33,26 @@ export function NotificationTestButton() {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
-      // 2. Verificar se tem token FCM registrado
+      // 2. Verificar se tem push subscription
       const { data: tokens, error: tokenError } = await supabase
         .from("user_tokens" as any)
-        .select("fcm_token")
+        .select("push_subscription")
         .eq("user_id", user.id);
 
       if (tokenError) {
-        console.error("Erro ao verificar tokens:", tokenError);
-        toast.error("Erro ao verificar tokens FCM");
+        console.error("Erro ao verificar subscriptions:", tokenError);
+        toast.error("Erro ao verificar push subscriptions");
         setTesting(false);
         return;
       }
 
       if (!tokens || tokens.length === 0) {
-        toast.error("Nenhum token FCM registrado. Tente ativar as notificações nas configurações.");
+        toast.error("Nenhuma subscription registrada. Tente ativar as notificações nas configurações.");
         setTesting(false);
         return;
       }
 
-      toast.info(`Token FCM encontrado! Enviando notificação push...`);
+      toast.info(`Push subscription encontrada! Enviando notificação...`);
 
       // 3. Enviar notificação via Edge Function
       const { data, error } = await supabase.functions.invoke("send-notification", {
@@ -111,9 +111,9 @@ export function NotificationTestButton() {
         </div>
 
         <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-          <span className="text-sm font-medium">Token FCM:</span>
-          <span className={`text-sm font-semibold ${fcmToken ? "text-green-600" : "text-yellow-600"}`}>
-            {fcmToken ? "✅ Registrado" : "⚠️ Não registrado"}
+          <span className="text-sm font-medium">Push Subscription:</span>
+          <span className={`text-sm font-semibold ${pushSubscription ? "text-green-600" : "text-yellow-600"}`}>
+            {pushSubscription ? "✅ Registrado" : "⚠️ Não registrado"}
           </span>
         </div>
       </div>
@@ -134,10 +134,10 @@ export function NotificationTestButton() {
         <p><strong>Como funciona:</strong></p>
         <ul className="list-disc list-inside space-y-1 ml-2">
           <li>Solicita permissão para notificações (se necessário)</li>
-          <li>Registra token FCM no Firebase</li>
-          <li>Envia notificação via Firebase Cloud Messaging</li>
-          <li>Notificação aparece na barra de notificações do dispositivo</li>
-          <li>Funciona mesmo com o app fechado</li>
+          <li>Cria Web Push subscription via Service Worker</li>
+          <li>Envia notificação via Web Push API</li>
+          <li>Notificação aparece na barra do sistema</li>
+          <li>Funciona em iOS 16.4+, Android, Windows, Mac</li>
         </ul>
       </div>
     </div>

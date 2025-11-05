@@ -3,27 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
-// Firebase configuration type
-interface FirebaseConfig {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket: string;
-  messagingSenderId: string;
-  appId: string;
-}
-
-// Declare Firebase types for compatibility
-declare global {
-  interface Window {
-    firebase?: any;
-  }
+// Web Push Subscription
+interface PushSubscriptionJSON {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
 }
 
 export function usePushNotifications() {
   const { user } = useAuth();
   const [permission, setPermission] = useState<NotificationPermission>("default");
-  const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [pushSubscription, setPushSubscription] = useState<PushSubscription | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,35 +26,22 @@ export function usePushNotifications() {
     }
   }, []);
 
-  // Check if running in iframe
-  const isInIframe = () => {
-    try {
-      return window.self !== window.top;
-    } catch (e) {
-      return true;
-    }
-  };
-
-  // Request notification permission and register FCM token
+  // Request notification permission and subscribe to Web Push
   const requestPermission = async () => {
     if (!("Notification" in window)) {
-      setError("This browser does not support notifications");
+      setError("Este navegador não suporta notificações");
       toast.error("Notificações não são suportadas neste navegador");
       return false;
     }
 
-    // Check if in iframe - REMOVIDO: Permitir notificações em qualquer ambiente
-    // if (isInIframe()) {
-    //   setError("Notifications blocked in preview mode");
-    //   toast.error("Notificações não funcionam no modo de visualização. Abra o app em uma nova aba para ativar as notificações.", {
-    //     duration: 8000,
-    //   });
-    //   setLoading(false);
-    //   return false;
-    // }
+    if (!("serviceWorker" in navigator)) {
+      setError("Service Worker não suportado");
+      toast.error("Seu navegador não suporta notificações push");
+      return false;
+    }
 
     if (!user) {
-      setError("User must be authenticated");
+      setError("Usuário precisa estar autenticado");
       toast.error("Você precisa estar autenticado");
       return false;
     }
@@ -73,8 +52,8 @@ export function usePushNotifications() {
     try {
       // Check if permission was previously denied
       if (Notification.permission === "denied") {
-        setError("Notification permission denied");
-        toast.error("Notificações foram bloqueadas. Por favor, habilite nas configurações do navegador.", {
+        setError("Notificações bloqueadas");
+        toast.error("Notificações foram bloqueadas. Habilite nas configurações do navegador.", {
           duration: 8000,
         });
         setLoading(false);
@@ -86,191 +65,149 @@ export function usePushNotifications() {
       setPermission(permission);
 
       if (permission !== "granted") {
-        setError("Notification permission denied");
+        setError("Permissão negada");
         toast.error("Permissão de notificação negada");
         setLoading(false);
         return false;
       }
 
-      // Initialize Firebase and get FCM token
-      const token = await initializeFirebaseAndGetToken();
+      // Register service worker
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
+      });
+
+      await navigator.serviceWorker.ready;
+      console.log('[Push] Service Worker registered:', registration);
+
+      // Subscribe to push notifications with VAPID key
+      const vapidKey = urlBase64ToUint8Array(
+        'BHZqbAVO7OeAZpwo-IbUZFmW5JpfxIluJOH-s3eZKEGvd5t9hE3uMA5FyVW_NtfplM7al7hwoTCFfo4WikVBRj8'
+      );
       
-      if (!token) {
-        throw new Error("Failed to get FCM token");
-      }
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidKey as any
+      });
 
-      setFcmToken(token);
+      console.log('[Push] Push subscription created:', subscription);
+      setPushSubscription(subscription);
 
-      // Register token with backend
-      await registerTokenWithBackend(token);
+      // Register subscription with backend
+      await registerSubscriptionWithBackend(subscription);
 
-      toast.success("Notificações ativadas com sucesso!");
+      toast.success("✅ Notificações ativadas! Funciona em iOS, Android, Windows e Mac!");
       setLoading(false);
       return true;
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to enable notifications";
+      console.error('[Push] Error:', err);
+      const errorMessage = err instanceof Error ? err.message : "Erro ao ativar notificações";
       setError(errorMessage);
-      toast.error("Erro ao ativar notificações: " + errorMessage);
+      toast.error("Erro: " + errorMessage);
       setLoading(false);
       return false;
     }
   };
 
-  // Initialize Firebase and get FCM token
-  const initializeFirebaseAndGetToken = async (): Promise<string | null> => {
-    try {
-      // Register service worker first
-      if ('serviceWorker' in navigator) {
-        try {
-          await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-          await navigator.serviceWorker.ready;
-        } catch (swError) {
-          throw new Error("Failed to register service worker");
-        }
-      }
-      
-      // Check if Firebase is loaded
-      if (!window.firebase) {
-        await loadFirebaseScripts();
-      }
+  // Convert VAPID key from base64 to Uint8Array
+  const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
 
-      // Firebase config for Respira Livre project
-      const firebaseConfig: FirebaseConfig = {
-        apiKey: "AIzaSyDXukH_zyIFZsuWdybyjw4mF9iebzqLc8M",
-        authDomain: "respira-livre-43a28.firebaseapp.com",
-        projectId: "respira-livre-43a28",
-        storageBucket: "respira-livre-43a28.firebasestorage.app",
-        messagingSenderId: "71444731873",
-        appId: "1:71444731873:web:f7e91ac9274d7da1e5a4a0",
-      };
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
 
-      // Initialize Firebase if not already initialized
-      if (!window.firebase.apps?.length) {
-        window.firebase.initializeApp(firebaseConfig);
-      }
-
-      // Get messaging instance
-      const messaging = window.firebase.messaging();
-
-      // Get FCM token with VAPID key
-      const token = await messaging.getToken({
-        vapidKey: "BHZqbAVO7OeAZpwo-IbUZFmW5JpfxIluJOH-s3eZKEGvd5t9hE3uMA5FyVW_NtfplM7al7hwoTCFfo4WikVBRj8",
-      });
-
-      // Handle foreground messages
-      messaging.onMessage((payload: any) => {
-        // Show toast notification
-        const title = payload.notification?.title || "Respira Livre";
-        const body = payload.notification?.body || "";
-        
-        toast(title, {
-          description: body,
-          duration: 5000,
-        });
-      });
-
-      return token;
-
-    } catch (err) {
-      return null;
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
     }
+    return outputArray;
   };
 
-  // Load Firebase scripts dynamically
-  const loadFirebaseScripts = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // Load Firebase App
-      const appScript = document.createElement("script");
-      appScript.src = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js";
-      appScript.async = true;
-
-      appScript.onload = () => {
-        // Load Firebase Messaging
-        const messagingScript = document.createElement("script");
-        messagingScript.src = "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js";
-        messagingScript.async = true;
-
-        messagingScript.onload = () => resolve();
-        messagingScript.onerror = () => reject(new Error("Failed to load Firebase Messaging"));
-
-        document.head.appendChild(messagingScript);
-      };
-
-      appScript.onerror = () => reject(new Error("Failed to load Firebase App"));
-      document.head.appendChild(appScript);
-    });
-  };
-
-  // Register FCM token with backend
-  const registerTokenWithBackend = async (token: string) => {
+  // Register push subscription with backend
+  const registerSubscriptionWithBackend = async (subscription: PushSubscription) => {
     if (!user) {
       throw new Error("User not authenticated");
     }
 
-    // Check if token already exists
+    const subscriptionJSON = subscription.toJSON() as PushSubscriptionJSON;
+    const subscriptionString = JSON.stringify(subscriptionJSON);
+
+    // Check if subscription already exists
     const { data: existingTokens, error: fetchError } = await supabase
       .from("user_tokens" as any)
       .select("id")
-      .eq("fcm_token", token)
+      .eq("push_subscription", subscriptionString)
       .eq("user_id", user.id);
 
     if (fetchError) {
-      console.error("Error checking existing token:", fetchError);
+      console.error("Error checking existing subscription:", fetchError);
       throw fetchError;
     }
 
-    // If token doesn't exist, insert it
+    // If subscription doesn't exist, insert it
     if (!existingTokens || existingTokens.length === 0) {
       const { error: insertError } = await supabase
         .from("user_tokens" as any)
         .insert({
           user_id: user.id,
-          fcm_token: token,
+          push_subscription: subscriptionString,
           device_type: getDeviceType(),
         });
 
       if (insertError) {
-        console.error("Error registering token:", insertError);
+        console.error("Error registering subscription:", insertError);
         throw insertError;
       }
+
+      console.log('[Push] Subscription registered with backend');
     } else {
-      // Update last_used_at for existing token
+      // Update last_used_at for existing subscription
       const { error: updateError } = await supabase
         .from("user_tokens" as any)
         .update({ last_used_at: new Date().toISOString() })
-        .eq("fcm_token", token)
+        .eq("push_subscription", subscriptionString)
         .eq("user_id", user.id);
 
       if (updateError) {
-        console.error("Error updating token:", updateError);
+        console.error("Error updating subscription:", updateError);
       }
+
+      console.log('[Push] Subscription updated');
     }
   };
 
-  // Unregister FCM token
+  // Unregister push subscription
   const unregisterToken = async () => {
-    if (!user || !fcmToken) {
+    if (!user || !pushSubscription) {
       return;
     }
 
     try {
+      const subscriptionJSON = pushSubscription.toJSON() as PushSubscriptionJSON;
+      const subscriptionString = JSON.stringify(subscriptionJSON);
+
+      // Unsubscribe from push
+      await pushSubscription.unsubscribe();
+
+      // Delete from database
       const { error } = await supabase
         .from("user_tokens" as any)
         .delete()
-        .eq("fcm_token", fcmToken)
+        .eq("push_subscription", subscriptionString)
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Error unregistering token:", error);
+        console.error("Error unregistering subscription:", error);
         throw error;
       }
 
-      setFcmToken(null);
+      setPushSubscription(null);
       toast.success("Notificações desativadas");
 
     } catch (err) {
-      console.error("Error unregistering token:", err);
+      console.error("Error unregistering subscription:", err);
       toast.error("Erro ao desativar notificações");
     }
   };
@@ -296,11 +233,11 @@ export function usePushNotifications() {
 
   return {
     permission,
-    fcmToken,
+    pushSubscription,
     loading,
     error,
     requestPermission,
     unregisterToken,
-    isSupported: "Notification" in window,
+    isSupported: "Notification" in window && "serviceWorker" in navigator,
   };
 }

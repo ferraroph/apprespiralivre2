@@ -168,3 +168,120 @@ self.addEventListener('message', (event) => {
     );
   }
 });
+
+// ========================================
+// PUSH NOTIFICATIONS - CROSS-PLATFORM
+// iOS 16.4+, Android, Windows, Mac
+// ========================================
+
+// PUSH EVENT - Recebe notificações do servidor
+self.addEventListener('push', (event) => {
+  console.log('[SW] Push notification received:', event);
+  
+  let notificationData = {
+    title: 'Respira Livre',
+    body: 'Você tem uma nova notificação',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: 'respira-livre-notification',
+    requireInteraction: false,
+    data: {}
+  };
+
+  // Parse notification data
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      console.log('[SW] Push data:', data);
+      
+      // Web Push format
+      if (data.title) {
+        notificationData.title = data.title;
+        notificationData.body = data.body || notificationData.body;
+        notificationData.icon = data.icon || notificationData.icon;
+        notificationData.data = data.data || data;
+      }
+      // Plain text
+      else if (typeof data === 'string') {
+        notificationData.body = data;
+      }
+    } catch (e) {
+      console.error('[SW] Error parsing push data:', e);
+      notificationData.body = event.data.text();
+    }
+  }
+
+  // Options para notificação nativa
+  const options = {
+    body: notificationData.body,
+    icon: notificationData.icon,
+    badge: notificationData.badge,
+    tag: notificationData.tag,
+    requireInteraction: notificationData.requireInteraction,
+    data: notificationData.data,
+    vibrate: [200, 100, 200],
+    actions: [
+      {
+        action: 'open',
+        title: 'Abrir'
+      },
+      {
+        action: 'close',
+        title: 'Fechar'
+      }
+    ]
+  };
+
+  // CRÍTICO: showNotification faz a notificação aparecer na barra do sistema
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, options)
+      .then(() => console.log('[SW] Notification displayed'))
+      .catch((error) => console.error('[SW] Error showing notification:', error))
+  );
+});
+
+// NOTIFICATION CLICK - Abre o app quando clicar
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification clicked:', event);
+  
+  event.notification.close();
+
+  if (event.action === 'close') {
+    return;
+  }
+
+  // Open or focus app
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+    .then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.registration.scope) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
+  );
+});
+
+// PUSH SUBSCRIPTION CHANGE - Mantém subscription atualizada
+self.addEventListener('pushsubscriptionchange', (event) => {
+  console.log('[SW] Push subscription changed');
+  event.waitUntil(
+    self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: self.registration.pushManager.applicationServerKey
+    })
+    .then((subscription) => {
+      console.log('[SW] New subscription:', subscription);
+      return fetch('/api/update-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription)
+      });
+    })
+    .catch((error) => console.error('[SW] Error renewing subscription:', error))
+  );
+});
