@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    sourcemap: true, // Generate source maps for better debugging and SEO
     modulePreload: {
       polyfill: true,
     },
