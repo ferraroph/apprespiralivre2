@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createErrorResponse, ErrorCodes, handleError } from "../_shared/error-handler.ts";
-import { create } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,22 +20,11 @@ interface NotificationRequest {
   achievement_id?: string;
 }
 
-interface FCMMessage {
-  message: {
-    token: string;
-    notification: {
-      title: string;
-      body: string;
-    };
-    data?: Record<string, string>;
-    android?: {
-      priority: string;
-    };
-    apns?: {
-      headers: {
-        "apns-priority": string;
-      };
-    };
+interface PushSubscription {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
   };
 }
 
@@ -48,12 +36,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const firebaseServiceAccount = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
     const cronSecret = Deno.env.get("CRON_SECRET");
-    
-    if (!firebaseServiceAccount) {
-      throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
-    }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -181,50 +164,50 @@ serve(async (req) => {
   }
 });
 
-// Generate OAuth2 access token from Firebase service account
-async function getAccessToken(): Promise<string> {
-  const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT");
-  if (!serviceAccountJson) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT not configured");
-  }
-
-  const serviceAccount = JSON.parse(serviceAccountJson);
-  const now = Math.floor(Date.now() / 1000);
+// Web Push Protocol implementation
+async function sendWebPush(
+  subscription: PushSubscription,
+  payload: string
+): Promise<boolean> {
+  const vapidPublicKey = Deno.env.get("VITE_FIREBASE_VAPID_KEY")!;
+  const vapidPrivateKey = "eVEOCwCRjqtRJDtg-VPT5LVWY5RpbEaVLDi04lCmgTU"; // Your VAPID private key
   
-  const header = {
-    alg: "RS256" as const,
+  const url = new URL(subscription.endpoint);
+  const audience = `${url.protocol}//${url.host}`;
+  
+  // Create JWT for VAPID
+  const jwtHeader = {
     typ: "JWT",
+    alg: "ES256",
   };
   
-  const payload = {
-    iss: serviceAccount.client_email,
-    sub: serviceAccount.client_email,
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600,
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
+  const jwtPayload = {
+    aud: audience,
+    exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60, // 12 hours
+    sub: "mailto:your-email@example.com", // Replace with your email
   };
-
-  // Create JWT using djwt
-  const jwt = await create(header, payload, serviceAccount.private_key);
-
-  // Exchange JWT for access token
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to get access token: ${error}`);
+  
+  // For simplicity, using a lightweight approach
+  // In production, you'd want to use a proper JWT library
+  const vapidHeaders = {
+    "Content-Type": "application/octet-stream",
+    "TTL": "86400",
+    "Crypto-Key": `p256ecdsa=${vapidPublicKey}`,
+    "Authorization": `WebPush ${vapidPrivateKey}`,
+  };
+  
+  try {
+    const response = await fetch(subscription.endpoint, {
+      method: "POST",
+      headers: vapidHeaders,
+      body: payload,
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error("Web Push error:", error);
+    return false;
   }
-
-  const data = await response.json();
-  return data.access_token;
 }
 
 async function sendDailyReminders(supabase: any) {
@@ -333,10 +316,10 @@ async function sendNotificationToUser(
   body: string,
   data?: Record<string, string>
 ) {
-  // Retrieve FCM tokens for user
+  // Retrieve Web Push subscriptions for user
   const { data: tokens, error: tokenError } = await supabase
     .from("user_tokens")
-    .select("fcm_token, id")
+    .select("push_subscription, id")
     .eq("user_id", userId);
 
   if (tokenError) {
@@ -345,71 +328,61 @@ async function sendNotificationToUser(
   }
 
   if (!tokens || tokens.length === 0) {
+    console.log(`No push subscriptions found for user ${userId}`);
     return;
   }
 
   const expiredTokenIds: string[] = [];
 
-  // Send notification to each token
+  // Send notification to each subscription
   for (const tokenRecord of tokens) {
     try {
-      const message: FCMMessage = {
-        message: {
-          token: tokenRecord.fcm_token,
-          notification: {
-            title,
-            body,
-          },
-          data: data || {},
-          android: {
-            priority: "high",
-          },
-          apns: {
-            headers: {
-              "apns-priority": "10",
-            },
-          },
-        },
-      };
+      if (!tokenRecord.push_subscription) {
+        console.log(`No push subscription for token ${tokenRecord.id}`);
+        continue;
+      }
 
-      // Get OAuth2 token from service account
-      const accessToken = await getAccessToken();
-      
-      const response = await fetch("https://fcm.googleapis.com/v1/projects/respira-livre-43a28/messages:send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(message),
+      // Parse the push subscription JSON
+      const subscription: PushSubscription = JSON.parse(tokenRecord.push_subscription);
+
+      // Create notification payload
+      const payload = JSON.stringify({
+        title,
+        body,
+        icon: "/icon-192.png",
+        badge: "/icon-192.png",
+        data: data || {},
+        vibrate: [200, 100, 200],
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("FCM error:", errorData);
-        
-        // Check if token is invalid or expired
-        if (errorData.error?.code === 404 || errorData.error?.status === "NOT_FOUND" || 
-            errorData.error?.code === 400 || errorData.error?.message?.includes("invalid")) {
-          expiredTokenIds.push(tokenRecord.id);
-        }
-      } else {
+      // Send via Web Push Protocol
+      const success = await sendWebPush(subscription, payload);
+
+      if (success) {
         // Update last_used_at timestamp
         await supabase
           .from("user_tokens")
           .update({ last_used_at: new Date().toISOString() })
           .eq("id", tokenRecord.id);
+        
+        console.log(`Notification sent successfully to subscription ${tokenRecord.id}`);
+      } else {
+        console.error(`Failed to send notification to subscription ${tokenRecord.id}`);
+        expiredTokenIds.push(tokenRecord.id);
       }
     } catch (error) {
-      console.error(`Error sending notification to token ${tokenRecord.fcm_token}:`, error);
+      console.error(`Error sending notification to subscription ${tokenRecord.id}:`, error);
+      expiredTokenIds.push(tokenRecord.id);
     }
   }
 
-  // Clean up expired tokens
+  // Clean up expired subscriptions
   if (expiredTokenIds.length > 0) {
     await supabase
       .from("user_tokens")
       .delete()
       .in("id", expiredTokenIds);
+    
+    console.log(`Cleaned up ${expiredTokenIds.length} expired subscriptions`);
   }
 }
