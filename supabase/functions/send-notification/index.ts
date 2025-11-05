@@ -57,17 +57,20 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Check authorization - either valid cron secret OR admin user
+    // Check authorization
     const authHeader = req.headers.get("Authorization");
     const cronSecretHeader = req.headers.get("x-cron-secret");
     
+    let currentUser: any = null;
     let isAuthorized = false;
+    let isCronJob = false;
     
     // Check for cron secret (for automated jobs)
     if (cronSecret && cronSecretHeader === cronSecret) {
       isAuthorized = true;
+      isCronJob = true;
     } 
-    // Check for admin JWT token
+    // Check for authenticated user
     else if (authHeader) {
       const token = authHeader.replace("Bearer ", "");
       const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -82,26 +85,13 @@ serve(async (req) => {
         );
       }
       
-      // Check if user has admin role
-      const { data: hasAdminRole, error: roleError } = await supabase
-        .rpc("has_role", { _user_id: user.id, _role: "admin" });
-      
-      if (roleError || !hasAdminRole) {
-        return createErrorResponse(
-          "Acesso negado. Apenas administradores podem enviar notificações",
-          ErrorCodes.UNAUTHORIZED,
-          403,
-          undefined,
-          corsHeaders
-        );
-      }
-      
+      currentUser = user;
       isAuthorized = true;
     }
     
     if (!isAuthorized) {
       return createErrorResponse(
-        "Autorização necessária. Use token de admin ou secret de cron",
+        "Autorização necessária",
         ErrorCodes.UNAUTHORIZED,
         401,
         undefined,
@@ -150,8 +140,21 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        if (body.payload.user_id) {
-          await sendNotificationToUser(supabase, body.payload.user_id, body.payload.title, body.payload.body, body.payload.data);
+        
+        // If not cron job, user can only send to themselves
+        const targetUserId = body.payload.user_id || currentUser?.id;
+        if (!isCronJob && currentUser && targetUserId !== currentUser.id) {
+          return createErrorResponse(
+            "Você só pode enviar notificações para si mesmo",
+            ErrorCodes.UNAUTHORIZED,
+            403,
+            undefined,
+            corsHeaders
+          );
+        }
+        
+        if (targetUserId) {
+          await sendNotificationToUser(supabase, targetUserId, body.payload.title, body.payload.body, body.payload.data);
           notificationsSent = 1;
         }
         break;

@@ -1,44 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Bell, Send } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export function NotificationTestButton() {
   const [testing, setTesting] = useState(false);
   const { user } = useAuth();
+  const { permission, requestPermission, fcmToken, loading: permissionLoading } = usePushNotifications();
 
-  // Teste 1: Notificação local do browser (sempre funciona)
-  const testLocalNotification = () => {
-    if (!("Notification" in window)) {
-      toast.error("Este browser não suporta notificações");
-      return;
-    }
-
-    if (Notification.permission === "granted") {
-      new Notification("🔥 TESTE LOCAL - FUNCIONOU!", {
-        body: "Esta é uma notificação local que sempre funciona!",
-        icon: "/favicon.ico",
-      });
-      toast.success("Notificação local enviada!");
-    } else if (Notification.permission === "denied") {
-      toast.error("Notificações bloqueadas pelo browser");
-    } else {
-      Notification.requestPermission().then((permission) => {
-        if (permission === "granted") {
-          new Notification("🔥 TESTE LOCAL - FUNCIONOU!", {
-            body: "Permissão concedida! Esta notificação funciona em qualquer lugar!",
-            icon: "/favicon.ico",
-          });
-          toast.success("Permissão concedida e notificação enviada!");
-        }
-      });
-    }
-  };
-
-  // Teste 2: Notificação via Edge Function (Firebase FCM)
-  const testFirebaseNotification = async () => {
+  // Teste completo de notificação push real
+  const testPushNotification = async () => {
     if (!user) {
       toast.error("Você precisa estar logado");
       return;
@@ -46,80 +20,125 @@ export function NotificationTestButton() {
 
     setTesting(true);
     try {
+      // 1. Verificar se tem permissão
+      if (permission !== "granted") {
+        toast.info("Solicitando permissão para notificações...");
+        const granted = await requestPermission();
+        if (!granted) {
+          toast.error("Permissão negada. Ative as notificações nas configurações do navegador.");
+          setTesting(false);
+          return;
+        }
+        // Aguardar um pouco para o token ser registrado
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      // 2. Verificar se tem token FCM registrado
+      const { data: tokens, error: tokenError } = await supabase
+        .from("user_tokens" as any)
+        .select("fcm_token")
+        .eq("user_id", user.id);
+
+      if (tokenError) {
+        console.error("Erro ao verificar tokens:", tokenError);
+        toast.error("Erro ao verificar tokens FCM");
+        setTesting(false);
+        return;
+      }
+
+      if (!tokens || tokens.length === 0) {
+        toast.error("Nenhum token FCM registrado. Tente ativar as notificações nas configurações.");
+        setTesting(false);
+        return;
+      }
+
+      toast.info(`Token FCM encontrado! Enviando notificação push...`);
+
+      // 3. Enviar notificação via Edge Function
       const { data, error } = await supabase.functions.invoke("send-notification", {
         body: {
           type: "custom",
           payload: {
-            user_id: user.id,
-            title: "🚀 TESTE FIREBASE FCM v1",
-            body: "Se você recebeu esta notificação, o Firebase v1 API está funcionando perfeitamente!"
+            title: "🔥 Notificação Push REAL!",
+            body: "Se você está vendo isso na barra de notificações do seu celular, o sistema está funcionando perfeitamente!",
+            data: {
+              type: "test",
+              timestamp: new Date().toISOString()
+            }
           }
         }
       });
 
       if (error) {
         console.error("Erro na Edge Function:", error);
-        toast.error(`Erro: ${error.message}`);
+        toast.error(`Erro ao enviar: ${error.message}`);
       } else {
-        toast.success("Notificação Firebase enviada!");
+        toast.success("✅ Notificação enviada! Verifique a barra de notificações do seu dispositivo.");
         console.log("Resposta da Edge Function:", data);
       }
     } catch (error) {
-      console.error("Erro ao testar Firebase:", error);
-      toast.error("Erro ao enviar notificação Firebase");
+      console.error("Erro ao testar notificação:", error);
+      toast.error("Erro ao enviar notificação");
     } finally {
       setTesting(false);
     }
   };
 
-  // Teste 3: Toast visual (sempre funciona)
-  const testToastNotification = () => {
-    toast("🎉 TESTE DE TOAST", {
-      description: "Esta é uma notificação visual que sempre funciona em qualquer ambiente!",
-      duration: 5000,
-    });
-  };
-
   return (
-    <div className="space-y-4 p-4 border rounded-lg">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        <Bell className="w-5 h-5" />
-        🧪 TESTES DE NOTIFICAÇÃO
-      </h3>
-      
-      <div className="grid gap-2">
-        <Button 
-          onClick={testLocalNotification} 
-          variant="outline" 
-          className="justify-start"
-        >
-          <Bell className="w-4 h-4 mr-2" />
-          Teste 1: Notificação Local (Browser)
-        </Button>
-        
-        <Button 
-          onClick={testFirebaseNotification} 
-          disabled={testing || !user}
-          variant="outline" 
-          className="justify-start"
-        >
-          <Send className="w-4 h-4 mr-2" />
-          Teste 2: Firebase FCM v1 API {testing && "(Enviando...)"}
-        </Button>
-        
-        <Button 
-          onClick={testToastNotification} 
-          variant="outline" 
-          className="justify-start"
-        >
-          🍞 Teste 3: Toast Visual
-        </Button>
+    <div className="space-y-4 p-6 border rounded-lg bg-card">
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <Bell className="w-5 h-5 text-primary" />
+          Teste de Notificações Push
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Este teste envia uma notificação REAL que aparece na barra de notificações do seu dispositivo.
+        </p>
       </div>
-      
-      <div className="text-sm text-muted-foreground">
-        <p><strong>Teste 1:</strong> Funciona em qualquer ambiente</p>
-        <p><strong>Teste 2:</strong> Precisa estar logado + Firebase configurado</p>
-        <p><strong>Teste 3:</strong> Toast visual sempre funciona</p>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+          <span className="text-sm font-medium">Status da permissão:</span>
+          <span className={`text-sm font-semibold ${
+            permission === "granted" ? "text-green-600" : 
+            permission === "denied" ? "text-red-600" : 
+            "text-yellow-600"
+          }`}>
+            {permission === "granted" ? "✅ Concedida" : 
+             permission === "denied" ? "❌ Negada" : 
+             "⚠️ Não solicitada"}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+          <span className="text-sm font-medium">Token FCM:</span>
+          <span className={`text-sm font-semibold ${fcmToken ? "text-green-600" : "text-yellow-600"}`}>
+            {fcmToken ? "✅ Registrado" : "⚠️ Não registrado"}
+          </span>
+        </div>
+      </div>
+
+      <Button 
+        onClick={testPushNotification} 
+        disabled={testing || permissionLoading || !user}
+        className="w-full"
+        size="lg"
+      >
+        <Bell className="w-4 h-4 mr-2" />
+        {testing ? "Enviando..." : 
+         permissionLoading ? "Configurando..." :
+         "Testar Notificação Push Real"}
+      </Button>
+
+      <div className="space-y-2 text-xs text-muted-foreground">
+        <p><strong>Como funciona:</strong></p>
+        <ul className="list-disc list-inside space-y-1 ml-2">
+          <li>Solicita permissão para notificações (se necessário)</li>
+          <li>Registra token FCM no Firebase</li>
+          <li>Envia notificação via Firebase Cloud Messaging</li>
+          <li>Notificação aparece na barra de notificações do dispositivo</li>
+          <li>Funciona mesmo com o app fechado</li>
+        </ul>
       </div>
     </div>
   );
