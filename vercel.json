@@ -10,7 +10,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico))",
+      "source": "/:file*.(js|css|woff|woff2|png|jpg|jpeg|gif|svg|ico)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -19,7 +19,7 @@
       ]
     },
     {
-      "source": "/(sw\\.js|firebase-messaging-sw\\.js)",
+      "source": "/(sw.js|firebase-messaging-sw.js)",
       "headers": [
         {
           "key": "Cache-Control",
