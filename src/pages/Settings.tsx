@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { NotificationPermissionDialog } from "@/components/NotificationPermissionDialog";
+import { NotificationTestButton } from "@/components/NotificationTestButton";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -116,6 +117,11 @@ export default function Settings() {
             />
           </div>
         </div>
+      </Card>
+
+      {/* BOTÃO DE TESTE DE NOTIFICAÇÕES */}
+      <Card className="card-premium p-6 animate-slide-up" style={{ animationDelay: "0.15s" }}>
+        <NotificationTestButton />
       </Card>
 
       <Card className="card-premium p-6 animate-slide-up" style={{ animationDelay: "0.2s" }}>
