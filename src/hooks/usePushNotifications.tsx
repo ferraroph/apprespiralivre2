@@ -51,15 +51,15 @@ export function usePushNotifications() {
       return false;
     }
 
-    // Check if in iframe
-    if (isInIframe()) {
-      setError("Notifications blocked in preview mode");
-      toast.error("Notificações não funcionam no modo de visualização. Abra o app em uma nova aba para ativar as notificações.", {
-        duration: 8000,
-      });
-      setLoading(false);
-      return false;
-    }
+    // Check if in iframe - REMOVIDO: Permitir notificações em qualquer ambiente
+    // if (isInIframe()) {
+    //   setError("Notifications blocked in preview mode");
+    //   toast.error("Notificações não funcionam no modo de visualização. Abra o app em uma nova aba para ativar as notificações.", {
+    //     duration: 8000,
+    //   });
+    //   setLoading(false);
+    //   return false;
+    // }
 
     if (!user) {
       setError("User must be authenticated");
