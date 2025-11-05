@@ -43,6 +43,10 @@
 
   <body>
     <div id="root"></div>
+    
+    <!-- Modulepreload for faster JS loading -->
+    <link rel="modulepreload" href="/src/main.tsx" />
+    
     <script type="module" src="/src/main.tsx"></script>
     
     <!-- Preload critical resources -->
