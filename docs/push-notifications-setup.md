@@ -1,79 +1,112 @@
-# Push Notifications Setup Guide
+# Push Notifications Setup Guide - ATUALIZADO 2024/2025
 
-This guide covers the setup and configuration of the Push Notifications system for Respira Livre.
+**⚠️ IMPORTANTE**: Este guia foi completamente atualizado para Firebase Cloud Messaging API v1. A API Legacy (Server Key) foi descontinuada em julho de 2024.
 
 ## Overview
 
-The push notifications system uses Firebase Cloud Messaging (FCM) to deliver notifications to users. It includes:
+O sistema de notificações push usa Firebase Cloud Messaging (FCM) v1 API para entregar notificações aos usuários. Inclui:
 
-- **Edge Function**: `send-notification` - Handles sending notifications via FCM
-- **Service Worker**: `firebase-messaging-sw.js` - Handles background notifications
-- **React Hook**: `usePushNotifications` - Manages FCM token registration
-- **Cron Jobs**: Scheduled notifications for daily reminders and streak alerts
+- **Edge Function**: `send-notification` - Envia notificações via FCM v1 API
+- **Service Worker**: `firebase-messaging-sw.js` - Gerencia notificações em background  
+- **React Hook**: `usePushNotifications` - Gerencia registro de tokens FCM
+- **Cron Jobs**: Notificações agendadas para lembretes diários e alertas de sequência
 
-## Prerequisites
+## Prerequisites - ATUALIZADOS 2024/2025
 
-1. Firebase project with Cloud Messaging enabled
-2. FCM Server Key (from Firebase Console)
-3. VAPID Key (from Firebase Console)
-4. Supabase project with pg_cron extension enabled
+1. ✅ Firebase project com Cloud Messaging API v1 **ENABLED**
+2. ❌ ~~FCM Server Key~~ **DESCONTINUADO** - Use Service Account JSON
+3. ✅ VAPID Key (Web Push certificates)  
+4. ✅ Service Account JSON do Firebase
+5. ✅ Supabase project com pg_cron extension enabled
 
-## Configuration Steps
+## Configuration Steps - FIREBASE v1 API (2024/2025)
 
-### 1. Firebase Setup
+### 1. Firebase Setup - NOVA API v1
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project or select existing project
-3. Enable Cloud Messaging:
-   - Go to Project Settings > Cloud Messaging
-   - Copy the Server Key
-   - Generate Web Push certificates (VAPID key)
+1. Vá para [Firebase Console](https://console.firebase.google.com/)
+2. Selecione seu projeto: **respira-livre-app**
+3. **CRÍTICO**: Verificar se Firebase Cloud Messaging API v1 está **ENABLED**:
+   - Vá em Project Settings > Cloud Messaging  
+   - Deve mostrar: "Firebase Cloud Messaging API (V1) ✅ Enabled"
+   - Se mostrar Legacy API Disabled, está correto!
 
-### 2. Environment Variables
+### 2. Baixar Service Account JSON (OBRIGATÓRIO)
 
-Add the following to your `.env` file:
+**❌ NÃO EXISTE MAIS SERVER KEY! Use Service Account:**
+
+1. No Firebase Console: **⚙️ Settings** > **Service Accounts**
+2. Clique em **"Generate New Private Key"**  
+3. Confirme clicando em **"Generate Key"**
+4. **BAIXE o arquivo JSON** - GUARDE COM SEGURANÇA!
+
+### 3. Copiar VAPID Key (Web Push)
+
+1. No Firebase Console: Project Settings > **Cloud Messaging**
+2. Na seção **"Web configuration"** > **"Web Push certificates"**
+3. **COPIE a Key Pair** (começa com "B...")
+
+### 4. Environment Variables - ATUALIZADAS 2024/2025
+
+Adicione no seu arquivo `.env`:
 
 ```env
-# Firebase Configuration
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_FIREBASE_VAPID_KEY=your_vapid_key
+# Firebase Configuration - USE DADOS DO SEU PROJETO
+VITE_FIREBASE_API_KEY=AIzaSy...
+VITE_FIREBASE_AUTH_DOMAIN=respira-livre-app.firebaseapp.com  
+VITE_FIREBASE_PROJECT_ID=respira-livre-app
+VITE_FIREBASE_STORAGE_BUCKET=respira-livre-app.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=71444791873
+VITE_FIREBASE_APP_ID=1:71444791873:web:...
+VITE_FIREBASE_VAPID_KEY=BHZqbAV07OaZpwo-ibUZFmW5JrfxiIuJOH-e3eZKEGvd5f9hE3u...
 
-# Supabase Secrets (add via Supabase CLI or Dashboard)
-FCM_SERVER_KEY=your_fcm_server_key
+# ❌ NÃO USE MAIS: FCM_SERVER_KEY (DESCONTINUADO)
+# ✅ USE AGORA: Service Account JSON completo no Supabase
 ```
 
-### 3. Update Service Worker
+### 5. Configurar Service Account no Supabase (NOVO)
 
-Edit `public/firebase-messaging-sw.js` and replace the placeholder values:
+**Adicione o JSON COMPLETO como secret:**
+
+```bash
+# Cole TODO o conteúdo do arquivo service-account.json
+supabase secrets set FIREBASE_SERVICE_ACCOUNT='{"type":"service_account","project_id":"respira-livre-app","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"firebase-adminsdk-...@respira-livre-app.iam.gserviceaccount.com","client_id":"...","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-...%40respira-livre-app.iam.gserviceaccount.com"}'
+```
+
+### 6. Atualizar Service Worker
+
+Edite `public/firebase-messaging-sw.js` com os dados REAIS do seu projeto:
 
 ```javascript
+// USE OS DADOS REAIS DO SEU PROJETO respira-livre-app
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSy...", // Seu API Key real
+  authDomain: "respira-livre-app.firebaseapp.com",
+  projectId: "respira-livre-app", 
+  storageBucket: "respira-livre-app.appspot.com",
+  messagingSenderId: "71444791873", // Seu Sender ID
+  appId: "1:71444791873:web:..." // Seu App ID real
 };
 ```
 
-### 4. Deploy Edge Function
+### 7. Deploy Edge Function - ATUALIZADA PARA v1 API
 
-Deploy the send-notification Edge Function:
+**IMPORTANTE**: A Edge Function já está atualizada para FCM v1 API.
 
 ```bash
+# Deploy da função (já configurada para v1 API)
 supabase functions deploy send-notification
+
+# ❌ NÃO USE MAIS: FCM_SERVER_KEY
+# ✅ JÁ CONFIGUROU: FIREBASE_SERVICE_ACCOUNT no passo 5
 ```
 
-Add the FCM_SERVER_KEY secret:
+### 8. Verificar se Service Account está configurado
 
 ```bash
-supabase secrets set FCM_SERVER_KEY=your_fcm_server_key
+# Verificar se o secret foi adicionado corretamente
+supabase secrets list
+
+# Deve aparecer: FIREBASE_SERVICE_ACCOUNT
 ```
 
 ### 5. Run Database Migrations
@@ -195,51 +228,82 @@ const { data, error } = await supabase.functions.invoke("send-notification", {
 3. Grant permission when prompted
 4. Check browser console for FCM token
 
-### Test Edge Function
+### Test Edge Function - FCM v1 API
 
 ```bash
-curl -X POST https://your-project.supabase.co/functions/v1/send-notification \
-  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+# TESTE ATUALIZADO para Firebase v1 API
+curl -X POST https://pyfgepdbxhbofrgainou.supabase.co/functions/v1/send-notification \
+  -H "Authorization: Bearer SEU_SERVICE_ROLE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "type": "custom",
     "payload": {
       "user_id": "user-uuid",
-      "title": "Test Notification",
-      "body": "This is a test"
+      "title": "🔥 Teste FCM v1 API",
+      "body": "Se você recebeu essa notificação, o Firebase v1 está funcionando!"
     }
   }'
 ```
 
-### Test Cron Jobs
+**Novo payload para FCM v1 API** (a função já converte automaticamente):
+- ✅ Endpoint: `https://fcm.googleapis.com/v1/projects/respira-livre-app/messages:send`
+- ✅ Auth: `Bearer <OAuth2_access_token>` (gerado do Service Account)  
+- ✅ Estrutura: `{"message": {"token": "...", "notification": {...}}}`
 
-Manually trigger the cron jobs:
+### Test Cron Jobs - Firebase v1 API
+
+Teste manual dos cron jobs (já configurados para v1 API):
 
 ```sql
--- Test daily reminder
+-- Teste daily reminder (FCM v1 API)
 SELECT net.http_post(
-  url := 'https://your-project.supabase.co/functions/v1/send-notification',
-  headers := '{"Authorization": "Bearer your-service-role-key", "Content-Type": "application/json"}'::jsonb,
+  url := 'https://pyfgepdbxhbofrgainou.supabase.co/functions/v1/send-notification',
+  headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY", "Content-Type": "application/json"}'::jsonb,
   body := '{"type": "daily_reminder"}'::jsonb
 );
 
--- Test streak at risk
+-- Teste streak at risk (FCM v1 API)  
 SELECT net.http_post(
-  url := 'https://your-project.supabase.co/functions/v1/send-notification',
-  headers := '{"Authorization": "Bearer your-service-role-key", "Content-Type": "application/json"}'::jsonb,
+  url := 'https://pyfgepdbxhbofrgainou.supabase.co/functions/v1/send-notification',
+  headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY", "Content-Type": "application/json"}'::jsonb,
   body := '{"type": "streak_at_risk"}'::jsonb
 );
 ```
 
-## Troubleshooting
+**✅ Vantagens da Firebase v1 API:**
+- **Segurança**: Tokens OAuth2 expiram em 1 hora 
+- **Performance**: Melhor entrega e relatórios
+- **Suporte**: Novas funcionalidades só na v1
 
-### Notifications Not Received
+## Troubleshooting - FIREBASE v1 API (2024/2025)
 
-1. Check notification permission in browser settings
-2. Verify FCM token is registered in `user_tokens` table
-3. Check Edge Function logs: `supabase functions logs send-notification`
-4. Verify FCM_SERVER_KEY is set correctly
-5. Check Firebase Console for delivery status
+### Notificações não recebidas
+
+1. **Verificar permissão** do browser (Settings > Notifications)
+2. **Verificar token FCM** na tabela `user_tokens` do Supabase  
+3. **Logs da Edge Function**: `supabase functions logs send-notification`
+4. **❌ NÃO PROCURAR**: FCM_SERVER_KEY (descontinuado)
+5. **✅ VERIFICAR**: FIREBASE_SERVICE_ACCOUNT está configurado
+6. **Firebase Console**: Project Settings > Cloud Messaging > v1 API enabled
+
+### Erro: "Legacy API disabled"  
+
+**✅ ISSO É NORMAL!** A Legacy API foi descontinuada. Se você vê:
+- "Cloud Messaging API (Legacy) ❌ Disabled" = **CORRETO**
+- "Firebase Cloud Messaging API (V1) ✅ Enabled" = **CORRETO**
+
+### Erro: "Invalid credentials" ou "Unauthorized"
+
+```bash
+# 1. Verificar se Service Account foi adicionado
+supabase secrets list | grep FIREBASE_SERVICE_ACCOUNT
+
+# 2. Testar se o JSON está válido  
+echo $FIREBASE_SERVICE_ACCOUNT | jq .
+
+# 3. Verificar se tem as permissions corretas
+# O Service Account precisa da role "Firebase Cloud Messaging API Admin"
+```
 
 ### Service Worker Not Registered
 
