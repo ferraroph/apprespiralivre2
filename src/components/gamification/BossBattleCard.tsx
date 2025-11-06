@@ -5,6 +5,7 @@ import { Sword, Heart, Trophy } from "lucide-react";
 import { Boss } from "@/hooks/useBosses";
 import { useProgress } from "@/hooks/useProgress";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BossBattleCardProps {
   boss: Boss;
@@ -17,11 +18,28 @@ export function BossBattleCard({ boss, canFight, onBattleStart }: BossBattleCard
   const healthCrystals = progress?.health_crystals || 0;
   const requiredCrystals = 2;
 
-  const handleBattle = () => {
+  const handleBattle = async () => {
     if (healthCrystals < requiredCrystals) {
       toast.error(`Você precisa de ${requiredCrystals} Cristais de Saúde para desafiar este boss!`);
       return;
     }
+    
+    // Deduct health crystals
+    if (progress) {
+      const { error } = await supabase
+        .from("progress")
+        .update({
+          health_crystals: healthCrystals - requiredCrystals,
+        })
+        .eq("user_id", progress.user_id);
+        
+      if (error) {
+        console.error("Error deducting crystals:", error);
+        toast.error("Erro ao usar cristais");
+        return;
+      }
+    }
+    
     onBattleStart();
   };
 
