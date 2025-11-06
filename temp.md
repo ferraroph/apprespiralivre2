@@ -1,1 +1,0 @@
--- Dados de seed movidos para: supabase/migrations/20251106000000_seed_gamification_data.sql
