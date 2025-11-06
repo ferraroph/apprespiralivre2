@@ -86,9 +86,9 @@ export function useMissions() {
           .eq("user_id", user.id)
           .eq("date", new Date().toISOString().split("T")[0]);
 
-        setMissions(refreshedData || []);
+        setMissions((refreshedData || []) as UserMission[]);
       } else {
-        setMissions(userMissionsData || []);
+        setMissions((userMissionsData || []) as UserMission[]);
       }
     } catch (error) {
       console.error("Error fetching missions:", error);

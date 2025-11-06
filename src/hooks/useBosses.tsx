@@ -47,7 +47,7 @@ export function useBosses() {
           .select("*");
 
         if (bossesError) throw bossesError;
-        setBosses(bossesData || []);
+        setBosses((bossesData || []) as unknown as Boss[]);
 
         // Check if user already fought daily boss today
         const today = new Date().toISOString().split("T")[0];
