@@ -16,54 +16,26 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    sourcemap: true, // Generate source maps for better debugging and SEO
+    sourcemap: true,
     modulePreload: {
       polyfill: true,
     },
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // React core
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'react-vendor';
-          }
-          // React Router
-          if (id.includes('node_modules/react-router-dom')) {
-            return 'router-vendor';
-          }
-          // Radix UI components
-          if (id.includes('node_modules/@radix-ui')) {
-            return 'ui-vendor';
-          }
-          // Tanstack Query
-          if (id.includes('node_modules/@tanstack/react-query')) {
-            return 'query-vendor';
-          }
-          // Supabase
-          if (id.includes('node_modules/@supabase')) {
-            return 'supabase-vendor';
-          }
-          // Sentry
-          if (id.includes('node_modules/@sentry')) {
-            return 'sentry-vendor';
-          }
-          // Lucide icons
-          if (id.includes('node_modules/lucide-react')) {
-            return 'icons-vendor';
-          }
-          // Firebase
-          if (id.includes('node_modules/firebase')) {
-            return 'firebase-vendor';
-          }
-          // Other large libraries
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'router-vendor': ['react-router-dom'],
+          'query-vendor': ['@tanstack/react-query'],
+          'ui-vendor': ['@radix-ui/react-avatar', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-label', '@radix-ui/react-progress', '@radix-ui/react-select', '@radix-ui/react-slot', '@radix-ui/react-toast', '@radix-ui/react-tooltip'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'sentry-vendor': ['@sentry/react'],
+          'icons-vendor': ['lucide-react'],
+          'firebase-vendor': ['firebase/app', 'firebase/messaging'],
         },
       },
     },
-    cssCodeSplit: true,
     minify: 'esbuild',
+    target: 'es2015',
     chunkSizeWarningLimit: 1000,
   },
 }));
