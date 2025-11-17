@@ -7,7 +7,7 @@ import { useLocalNotifications } from '@/hooks/useLocalNotifications';
 import { Bell, Clock, Zap } from 'lucide-react';
 
 export const LocalNotificationTest = () => {
-  const { sendLocalNotification, scheduleReminder, sendInstantNotification } = useLocalNotifications();
+  const { sendLocalNotification, scheduleReminder, sendInstantNotification, isDespiaAvailable } = useLocalNotifications();
   const [title, setTitle] = useState('Lembrete Respira Livre');
   const [message, setMessage] = useState('Você está indo muito bem! Continue sua jornada.');
   const [delaySeconds, setDelaySeconds] = useState(5);
@@ -19,9 +19,19 @@ export const LocalNotificationTest = () => {
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5 text-primary" />
           Notificações Locais (Despia)
+          {!isDespiaAvailable && (
+            <span className="text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 px-2 py-1 rounded">
+              Não disponível
+            </span>
+          )}
         </CardTitle>
         <CardDescription>
           Teste o sistema de notificações nativas usando Despia SDK
+          {!isDespiaAvailable && (
+            <span className="block mt-2 text-yellow-600 dark:text-yellow-400">
+              ⚠️ Instale o app para usar notificações locais
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -69,27 +79,39 @@ export const LocalNotificationTest = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
           <Button
-            onClick={() => sendInstantNotification(title, message, url)}
+            onClick={() => {
+              console.log('[TEST] Botão Enviar Agora clicado');
+              sendInstantNotification(title, message, url);
+            }}
             className="gap-2"
             variant="default"
+            disabled={!isDespiaAvailable}
           >
             <Zap className="h-4 w-4" />
             Enviar Agora
           </Button>
 
           <Button
-            onClick={() => scheduleReminder(title, message, delaySeconds)}
+            onClick={() => {
+              console.log('[TEST] Botão Agendar clicado');
+              scheduleReminder(title, message, delaySeconds);
+            }}
             className="gap-2"
             variant="secondary"
+            disabled={!isDespiaAvailable}
           >
             <Clock className="h-4 w-4" />
             Agendar
           </Button>
 
           <Button
-            onClick={() => sendLocalNotification({ title, message, delaySeconds, url })}
+            onClick={() => {
+              console.log('[TEST] Botão Personalizada clicado');
+              sendLocalNotification({ title, message, delaySeconds, url });
+            }}
             className="gap-2"
             variant="outline"
+            disabled={!isDespiaAvailable}
           >
             <Bell className="h-4 w-4" />
             Personalizada

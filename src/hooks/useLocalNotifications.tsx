@@ -15,16 +15,45 @@ export interface LocalNotificationOptions {
  */
 export const useLocalNotifications = () => {
   /**
+   * Check if Despia is available in the current environment
+   */
+  const isDespiaAvailable = useCallback(() => {
+    try {
+      return typeof despia === 'function';
+    } catch {
+      return false;
+    }
+  }, []);
+
+  /**
    * Send a local push notification
    * @param options - Notification configuration
    */
   const sendLocalNotification = useCallback(async (options: LocalNotificationOptions) => {
     try {
+      console.log('[DESPIA] Tentando enviar notificação:', options);
+      
+      if (!isDespiaAvailable()) {
+        console.error('[DESPIA] SDK não disponível no ambiente atual');
+        toast.error('Notificações locais não disponíveis neste ambiente. Use o app instalado.');
+        return false;
+      }
+
       const { title, message, delaySeconds = 0, url = '' } = options;
       
+      // Encode special characters to prevent URL issues
+      const encodedMessage = encodeURIComponent(message);
+      const encodedTitle = encodeURIComponent(title);
+      const encodedUrl = url ? encodeURIComponent(url) : '';
+      
+      const despiaUrl = `sendlocalpushmsg://push.send?s=${delaySeconds}=msg!${encodedMessage}&!#${encodedTitle}&!#${encodedUrl}`;
+      
+      console.log('[DESPIA] Enviando com URL:', despiaUrl);
+      
       // Use Despia SDK to send local push notification
-      // Format: sendlocalpushmsg://push.send?s=${seconds}=msg!${message}&!#${title}&!#${url}
-      despia(`sendlocalpushmsg://push.send?s=${delaySeconds}=msg!${message}&!#${title}&!#${url}`);
+      despia(despiaUrl);
+      
+      console.log('[DESPIA] Notificação enviada com sucesso');
       
       toast.success(
         delaySeconds > 0
@@ -34,11 +63,11 @@ export const useLocalNotifications = () => {
       
       return true;
     } catch (error) {
-      console.error('Erro ao enviar notificação local:', error);
-      toast.error('Erro ao enviar notificação');
+      console.error('[DESPIA] Erro ao enviar notificação local:', error);
+      toast.error('Erro ao enviar notificação: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
       return false;
     }
-  }, []);
+  }, [isDespiaAvailable]);
 
   /**
    * Schedule a reminder notification
@@ -58,5 +87,6 @@ export const useLocalNotifications = () => {
     sendLocalNotification,
     scheduleReminder,
     sendInstantNotification,
+    isDespiaAvailable: isDespiaAvailable(),
   };
 };
