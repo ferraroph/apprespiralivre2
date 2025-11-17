@@ -13,6 +13,7 @@ import { NotificationSetupFlow } from "@/components/NotificationSetupFlow";
 import { PWATestSuite } from "@/components/PWATestSuite";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LocalNotificationTest } from "@/components/LocalNotificationTest";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -269,6 +270,11 @@ export default function Settings() {
       <Card className="card-premium p-6 animate-slide-up" style={{ animationDelay: "0.15s" }}>
         <NotificationTestButton />
       </Card>
+
+      {/* Notificações Locais com Despia */}
+      <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
+        <LocalNotificationTest />
+      </div>
 
       {/* PWA Test Suite */}
       <div className="animate-slide-up" style={{ animationDelay: "0.25s" }}>
