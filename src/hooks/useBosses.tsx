@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { isDevMode } from "@/lib/devModeData";
 
 export interface BossPhase {
   name: string;
@@ -34,22 +35,25 @@ export function useBosses() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (isDevMode() || !user) {
       setLoading(false);
       return;
     }
 
     const fetchBosses = async () => {
       try {
-        // Fetch all boss types
         const { data: bossesData, error: bossesError } = await supabase
           .from("boss_types")
           .select("*");
 
-        if (bossesError) throw bossesError;
+        if (bossesError) {
+          // Table might not exist - graceful fallback
+          console.warn("[BOSSES] Table not available:", bossesError.message);
+          setLoading(false);
+          return;
+        }
         setBosses((bossesData || []) as unknown as Boss[]);
 
-        // Check if user already fought daily boss today
         const today = new Date().toISOString().split("T")[0];
         const { data: encounterData } = await supabase
           .from("boss_encounters")
@@ -62,7 +66,7 @@ export function useBosses() {
 
         setTodayEncounter(encounterData);
       } catch (error) {
-        console.error("Error fetching bosses:", error);
+        // Silently handle - tables may not be created yet
       } finally {
         setLoading(false);
       }

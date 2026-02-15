@@ -7,7 +7,7 @@ import { Users, Flame, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreateSquadDialog } from "@/components/CreateSquadDialog";
-import { useCachedAsync } from "@/hooks/useCache";
+import { isDevMode } from "@/lib/devModeData";
 
 interface Squad {
   id: string;
@@ -28,19 +28,25 @@ export function SquadList() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const fetchSquads = useCallback(async () => {
+    if (isDevMode()) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       
-      // Simple query compatible with Supabase Free plan
-      // First, get all squads (simple query)
       const { data: squadsData, error: squadsError } = await supabase
         .from("squads")
         .select("id, name, description, max_members, squad_streak, created_at")
         .order("squad_streak", { ascending: false });
 
-      if (squadsError) throw squadsError;
+      if (squadsError) {
+        console.warn("[SQUADS] Table not available:", squadsError.message);
+        setLoading(false);
+        return;
+      }
 
-      // Then get member counts separately (avoiding complex JOINs)
       const squadIds = (squadsData || []).map(squad => squad.id);
       
       if (squadIds.length === 0) {
@@ -48,15 +54,13 @@ export function SquadList() {
         return;
       }
 
-      // Get member counts for all squads in one simple query
       const { data: memberData, error: memberError } = await supabase
         .from("squad_members")
         .select("squad_id")
         .in("squad_id", squadIds);
 
       if (memberError) {
-        console.warn("Could not fetch member counts:", memberError);
-        // Return squads without member counts rather than failing
+        // RLS recursion or other error - return squads without counts
         const squadsWithoutCounts = (squadsData || []).map(squad => ({
           ...squad,
           member_count: 0
@@ -65,8 +69,7 @@ export function SquadList() {
         return;
       }
 
-      // Count members per squad
-      const memberCounts = new Map();
+      const memberCounts = new Map<string, number>();
       (memberData || []).forEach(member => {
         const count = memberCounts.get(member.squad_id) || 0;
         memberCounts.set(member.squad_id, count + 1);
@@ -79,22 +82,22 @@ export function SquadList() {
 
       setSquads(squadsWithCounts);
     } catch (error) {
-      console.error("Error fetching squads:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os squads",
-        variant: "destructive",
-      });
+      // Silently handle - don't show error toast for table-not-found
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     fetchSquads();
   }, [fetchSquads]);
 
   const handleJoinSquad = async (squadId: string) => {
+    if (isDevMode()) {
+      toast({ title: "Modo Dev", description: "Join desabilitado em modo de desenvolvimento" });
+      return;
+    }
+
     try {
       setJoiningSquadId(squadId);
 
@@ -108,18 +111,24 @@ export function SquadList() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("join-squad", {
-        body: { squad_id: squadId },
-      });
-
-      if (error) throw error;
-
-      if (data?.error) {
-        toast({
-          title: "Erro",
-          description: data.error,
-          variant: "destructive",
+      // Direct insert instead of edge function (join-squad doesn't exist)
+      const { error: joinError } = await supabase
+        .from("squad_members")
+        .insert({
+          squad_id: squadId,
+          user_id: session.user.id,
+          role: "member",
         });
+
+      if (joinError) {
+        if (joinError.code === "23505") {
+          toast({
+            title: "Info",
+            description: "Você já é membro deste squad",
+          });
+        } else {
+          throw joinError;
+        }
         return;
       }
 
@@ -128,13 +137,12 @@ export function SquadList() {
         description: "Você entrou no squad",
       });
 
-      // Navigate to squad detail
       navigate(`/squads/${squadId}`);
     } catch (error) {
       console.error("Error joining squad:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível entrar no squad",
+        description: "Não foi possível entrar no squad. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -242,12 +250,12 @@ export function SquadList() {
                   }}
                   disabled={
                     joiningSquadId === squad.id ||
-                    squad.member_count >= squad.max_members
+                    (squad.member_count ?? 0) >= squad.max_members
                   }
                 >
                   {joiningSquadId === squad.id
                     ? "Entrando..."
-                    : squad.member_count >= squad.max_members
+                    : (squad.member_count ?? 0) >= squad.max_members
                     ? "Squad Cheio"
                     : "Entrar no Squad"}
                 </Button>

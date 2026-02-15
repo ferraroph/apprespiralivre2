@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Trophy, Medal, Award, Users } from "lucide-react";
+import { Trophy, Users } from "lucide-react";
 import { useProgress } from "@/hooks/useProgress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { isDevMode } from "@/lib/devModeData";
 
 interface League {
   id: string;
@@ -32,12 +33,23 @@ export default function Leagues() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDevMode()) {
+      setLoading(false);
+      return;
+    }
+
     const fetchLeagues = async () => {
       try {
-        const { data: leaguesData } = await supabase
+        const { data: leaguesData, error } = await supabase
           .from("leagues")
           .select("*")
           .order("tier", { ascending: true });
+
+        if (error) {
+          console.warn("[LEAGUES] Table not available:", error.message);
+          setLoading(false);
+          return;
+        }
 
         if (leaguesData) {
           setLeagues(leaguesData as unknown as League[]);
@@ -65,7 +77,7 @@ export default function Leagues() {
           }
         }
       } catch (error) {
-        console.error("Error fetching leagues:", error);
+        // Silently handle - tables may not exist
       } finally {
         setLoading(false);
       }
@@ -87,6 +99,32 @@ export default function Leagues() {
             <Skeleton key={i} className="h-24 w-full" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  // Empty state when no leagues data
+  if (leagues.length === 0) {
+    return (
+      <div className="container max-w-6xl mx-auto p-4 md:p-6 space-y-6 animate-fade-in">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl md:text-4xl font-bold text-primary text-glow">
+            Sistema de Ligas
+          </h1>
+          <p className="text-muted-foreground">
+            Compita com outros usuários e suba de nível semanalmente!
+          </p>
+        </div>
+        <Card className="p-12 card-premium card-depth text-center">
+          <Trophy className="h-16 w-16 text-primary/30 mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Em Breve!</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            O sistema de ligas está sendo preparado. Continue fazendo check-ins e acumulando XP para estar pronto quando as ligas forem lançadas!
+          </p>
+          <div className="mt-4 text-primary font-bold text-2xl">
+            Seu XP: {progress?.xp || 0}
+          </div>
+        </Card>
       </div>
     );
   }
@@ -176,9 +214,7 @@ export default function Leagues() {
                       <p className="text-sm text-primary animate-pulse">Liga Atual</p>
                     )}
                     {!isActive && isCompleted && (
-                      <p className="text-sm text-muted-foreground">
-                        ✓ Completada
-                      </p>
+                      <p className="text-sm text-muted-foreground">✓ Completada</p>
                     )}
                     {!isActive && !isCompleted && (
                       <p className="text-sm text-muted-foreground">

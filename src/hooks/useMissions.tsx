@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { isDevMode } from "@/lib/devModeData";
 
 export interface Mission {
   id: string;
@@ -31,31 +32,36 @@ export function useMissions() {
   const [loading, setLoading] = useState(true);
 
   const fetchMissions = async () => {
-    if (!user) {
+    if (isDevMode() || !user) {
       setLoading(false);
       return;
     }
 
     try {
-      // Fetch all active missions
       const { data: allMissions, error: missionsError } = await supabase
         .from("missions")
         .select("*")
         .eq("is_active", true)
         .order("type");
 
-      if (missionsError) throw missionsError;
+      if (missionsError) {
+        console.warn("[MISSIONS] Table not available:", missionsError.message);
+        setLoading(false);
+        return;
+      }
 
-      // Fetch user's progress on missions
       const { data: userMissionsData, error: userMissionsError } = await supabase
         .from("user_missions")
         .select("*, mission:missions(*)")
         .eq("user_id", user.id)
         .eq("date", new Date().toISOString().split("T")[0]);
 
-      if (userMissionsError) throw userMissionsError;
+      if (userMissionsError) {
+        console.warn("[MISSIONS] user_missions not available:", userMissionsError.message);
+        setLoading(false);
+        return;
+      }
 
-      // Create user missions for any missions user doesn't have yet
       const existingMissionIds = new Set(
         userMissionsData?.map((um) => um.mission_id) || []
       );
@@ -79,7 +85,6 @@ export function useMissions() {
 
         if (insertError) throw insertError;
 
-        // Refetch after creating
         const { data: refreshedData } = await supabase
           .from("user_missions")
           .select("*, mission:missions(*)")
@@ -91,8 +96,7 @@ export function useMissions() {
         setMissions((userMissionsData || []) as UserMission[]);
       }
     } catch (error) {
-      console.error("Error fetching missions:", error);
-      toast.error("Erro ao carregar missões");
+      // Silently handle - tables may not be created yet
     } finally {
       setLoading(false);
     }
@@ -101,7 +105,8 @@ export function useMissions() {
   useEffect(() => {
     fetchMissions();
 
-    // Subscribe to changes
+    if (isDevMode() || !user) return;
+
     const channel = supabase
       .channel("user-missions-changes")
       .on(
@@ -124,13 +129,12 @@ export function useMissions() {
   }, [user]);
 
   const claimReward = async (userMissionId: string) => {
-    if (!user) return;
+    if (!user || isDevMode()) return;
 
     try {
       const mission = missions.find((m) => m.id === userMissionId);
       if (!mission || !mission.completed || mission.claimed) return;
 
-      // Update user_missions to claimed
       const { error: claimError } = await supabase
         .from("user_missions")
         .update({ claimed: true })
@@ -138,7 +142,6 @@ export function useMissions() {
 
       if (claimError) throw claimError;
 
-      // Update user progress (XP, coins, gems)
       const { data: currentProgress } = await supabase
         .from("progress")
         .select("*")

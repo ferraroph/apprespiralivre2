@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { isDevMode } from "@/lib/devModeData";
 
 export interface ChestType {
   id: string;
@@ -22,7 +23,7 @@ export interface UserChest {
   user_id: string;
   chest_type_id: string;
   opened: boolean;
-  rewards: any;
+  rewards: Record<string, unknown>;
   earned_at: string;
   opened_at?: string;
   chest_type: ChestType;
@@ -34,7 +35,7 @@ export function useChests() {
   const [loading, setLoading] = useState(true);
 
   const fetchChests = async () => {
-    if (!user) {
+    if (isDevMode() || !user) {
       setLoading(false);
       return;
     }
@@ -46,11 +47,14 @@ export function useChests() {
         .eq("user_id", user.id)
         .order("earned_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.warn("[CHESTS] Table not available:", error.message);
+        setLoading(false);
+        return;
+      }
       setChests((data || []) as unknown as UserChest[]);
     } catch (error) {
-      console.error("Error fetching chests:", error);
-      toast.error("Erro ao carregar baús");
+      // Silently handle - tables may not be created yet
     } finally {
       setLoading(false);
     }
@@ -58,6 +62,8 @@ export function useChests() {
 
   useEffect(() => {
     fetchChests();
+
+    if (isDevMode() || !user) return;
 
     const channel = supabase
       .channel("user-chests-changes")
@@ -81,13 +87,12 @@ export function useChests() {
   }, [user]);
 
   const openChest = async (chestId: string) => {
-    if (!user) return;
+    if (!user || isDevMode()) return;
 
     try {
       const chest = chests.find((c) => c.id === chestId);
       if (!chest || chest.opened) return;
 
-      // Generate random rewards based on chest type
       const xpReward =
         Math.floor(
           Math.random() * (chest.chest_type.max_xp - chest.chest_type.min_xp + 1)
@@ -107,7 +112,6 @@ export function useChests() {
 
       const rewards = { xp: xpReward, coins: coinsReward, gems: gemsReward };
 
-      // Update chest as opened
       const { error: chestError } = await supabase
         .from("user_chests")
         .update({ opened: true, rewards, opened_at: new Date().toISOString() })
@@ -115,7 +119,6 @@ export function useChests() {
 
       if (chestError) throw chestError;
 
-      // Update user progress
       const { data: progress } = await supabase
         .from("progress")
         .select("*")

@@ -8,10 +8,9 @@ import { useProgress } from "@/hooks/useProgress";
 import { CheckinDialog } from "@/components/CheckinDialog";
 import { ResourcesHeader } from "@/components/gamification/ResourcesHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isDevMode } from "@/lib/devModeData";
 
 export default function Dashboard() {
-  console.log('[PAGE] Dashboard inicializado');
-  
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { profile, progress, loading: dataLoading } = useProgress();
@@ -23,28 +22,15 @@ export default function Dashboard() {
     seconds: 0,
   });
 
-  console.log('[PAGE] Dashboard estados:', { 
-    hasUser: !!user, 
-    authLoading, 
-    dataLoading,
-    hasProfile: !!profile,
-    hasProgress: !!progress,
-    checkinOpen
-  });
-
   useEffect(() => {
-    console.log('[PAGE] Dashboard verificando autenticação:', { authLoading, hasUser: !!user });
-    if (!authLoading && !user) {
-      console.log('[PAGE] Dashboard usuário não autenticado - redirecionando para /auth');
+    if (!authLoading && !user && !isDevMode()) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
 
   const startDate = profile?.quit_date ? new Date(profile.quit_date) : new Date();
-  console.log('[PAGE] Dashboard data de início:', startDate);
 
   useEffect(() => {
-    console.log('[PAGE] Dashboard configurando timer de tempo decorrido');
     const interval = setInterval(() => {
       const now = new Date();
       const diff = now.getTime() - startDate.getTime();
@@ -57,10 +43,7 @@ export default function Dashboard() {
       setTimeElapsed({ days, hours, minutes, seconds });
     }, 1000);
 
-    return () => {
-      console.log('[PAGE] Dashboard limpando timer de tempo decorrido');
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [startDate]);
 
   if (authLoading || dataLoading) {
@@ -83,7 +66,9 @@ export default function Dashboard() {
       <CheckinDialog
         open={checkinOpen}
         onOpenChange={setCheckinOpen}
-        onSuccess={() => window.location.reload()}
+        onSuccess={() => {
+          setCheckinOpen(false);
+        }}
       />
       {/* Hero Counter */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-card to-card/50 border border-primary/20 p-8 card-depth glow-primary-subtle">
@@ -133,7 +118,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Streak Atual</p>
-              <p className="text-2xl font-bold text-primary">{progress?.current_streak || 0} dias</p>
+              <p className="text-2xl font-bold text-primary">{progress?.streak || progress?.current_streak || 0} dias</p>
             </div>
           </div>
         </Card>

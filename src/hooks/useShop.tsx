@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
+import { isDevMode } from "@/lib/devModeData";
 
 export interface ShopItem {
   id: string;
@@ -12,7 +13,7 @@ export interface ShopItem {
   price_coins: number;
   price_gems: number;
   duration_hours?: number;
-  effect: any;
+  effect: Record<string, unknown>;
   is_active: boolean;
 }
 
@@ -22,6 +23,11 @@ export function useShop() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDevMode()) {
+      setLoading(false);
+      return;
+    }
+
     const fetchItems = async () => {
       try {
         const { data, error } = await supabase
@@ -30,10 +36,14 @@ export function useShop() {
           .eq("is_active", true)
           .order("price_coins");
 
-        if (error) throw error;
+        if (error) {
+          console.warn("[SHOP] Table not available:", error.message);
+          setLoading(false);
+          return;
+        }
         setItems((data || []) as ShopItem[]);
       } catch (error) {
-        console.error("Error fetching shop items:", error);
+        // Silently handle - tables may not be created yet
       } finally {
         setLoading(false);
       }
@@ -43,13 +53,12 @@ export function useShop() {
   }, []);
 
   const purchaseItem = async (itemId: string) => {
-    if (!user) return;
+    if (!user || isDevMode()) return;
 
     try {
       const item = items.find((i) => i.id === itemId);
       if (!item) return;
 
-      // Get user progress
       const { data: progress } = await supabase
         .from("progress")
         .select("*")
@@ -61,7 +70,6 @@ export function useShop() {
         return;
       }
 
-      // Check if user has enough currency
       if (
         progress.respi_coins < item.price_coins ||
         progress.gems < item.price_gems
@@ -70,7 +78,6 @@ export function useShop() {
         return;
       }
 
-      // Deduct currency
       const { error: progressError } = await supabase
         .from("progress")
         .update({
@@ -81,7 +88,6 @@ export function useShop() {
 
       if (progressError) throw progressError;
 
-      // Add item to inventory
       const expiresAt = item.duration_hours
         ? new Date(Date.now() + item.duration_hours * 60 * 60 * 1000).toISOString()
         : null;

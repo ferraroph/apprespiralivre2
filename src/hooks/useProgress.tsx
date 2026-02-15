@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { isDevMode, DEV_PROFILE, DEV_PROGRESS } from "@/lib/devModeData";
 
 export function useProgress() {
   const { user } = useAuth();
@@ -9,6 +10,14 @@ export function useProgress() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Dev mode: use mock data
+    if (isDevMode()) {
+      setProfile(DEV_PROFILE);
+      setProgress(DEV_PROGRESS);
+      setLoading(false);
+      return;
+    }
+
     if (!user) {
       setLoading(false);
       return;
@@ -16,7 +25,6 @@ export function useProgress() {
 
     const fetchData = async () => {
       try {
-        // Fetch profile
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -26,7 +34,6 @@ export function useProgress() {
         if (profileError) throw profileError;
         setProfile(profileData);
 
-        // Fetch progress
         const { data: progressData, error: progressError } = await supabase
           .from("progress")
           .select("*")
@@ -36,7 +43,6 @@ export function useProgress() {
         if (progressError) throw progressError;
         setProgress(progressData);
 
-        // Calculate daily progress
         if (profileData) {
           await supabase.rpc("calculate_daily_progress", {
             p_user_id: user.id,
@@ -51,7 +57,6 @@ export function useProgress() {
 
     fetchData();
 
-    // Subscribe to changes
     const progressChannel = supabase
       .channel("progress-changes")
       .on(
