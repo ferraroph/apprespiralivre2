@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
-import { isDevMode } from "@/lib/devModeData";
+import { isDevMode, getDevChests } from "@/lib/devModeData";
 
 export interface ChestType {
   id: string;
@@ -35,7 +35,14 @@ export function useChests() {
   const [loading, setLoading] = useState(true);
 
   const fetchChests = async () => {
-    if (isDevMode() || !user) {
+    // Dev mode: return simulated chests
+    if (isDevMode()) {
+      setChests(getDevChests());
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -54,7 +61,7 @@ export function useChests() {
       }
       setChests((data || []) as unknown as UserChest[]);
     } catch (error) {
-      // Silently handle - tables may not be created yet
+      // Silently handle
     } finally {
       setLoading(false);
     }
@@ -87,28 +94,40 @@ export function useChests() {
   }, [user]);
 
   const openChest = async (chestId: string) => {
-    if (!user || isDevMode()) return;
+    // Dev mode: simulate opening locally
+    if (isDevMode()) {
+      const chest = chests.find((c) => c.id === chestId);
+      if (!chest || chest.opened) return;
+
+      const xpReward = Math.floor(Math.random() * (chest.chest_type.max_xp - chest.chest_type.min_xp + 1)) + chest.chest_type.min_xp;
+      const coinsReward = Math.floor(Math.random() * (chest.chest_type.max_coins - chest.chest_type.min_coins + 1)) + chest.chest_type.min_coins;
+      const gemsReward = Math.random() * 100 < chest.chest_type.gem_chance
+        ? Math.floor(Math.random() * (chest.chest_type.max_gems - chest.chest_type.min_gems + 1)) + chest.chest_type.min_gems
+        : 0;
+
+      setChests(prev => prev.map(c =>
+        c.id === chestId
+          ? { ...c, opened: true, rewards: { xp: xpReward, coins: coinsReward, gems: gemsReward }, opened_at: new Date().toISOString() }
+          : c
+      ));
+
+      toast.success(
+        `🎉 Baú aberto! +${xpReward} XP, +${coinsReward} Coins${gemsReward > 0 ? `, +${gemsReward} Gemas` : ""}`
+      );
+      return;
+    }
+
+    if (!user) return;
 
     try {
       const chest = chests.find((c) => c.id === chestId);
       if (!chest || chest.opened) return;
 
-      const xpReward =
-        Math.floor(
-          Math.random() * (chest.chest_type.max_xp - chest.chest_type.min_xp + 1)
-        ) + chest.chest_type.min_xp;
-      const coinsReward =
-        Math.floor(
-          Math.random() *
-            (chest.chest_type.max_coins - chest.chest_type.min_coins + 1)
-        ) + chest.chest_type.min_coins;
-      const gemsReward =
-        Math.random() * 100 < chest.chest_type.gem_chance
-          ? Math.floor(
-              Math.random() *
-                (chest.chest_type.max_gems - chest.chest_type.min_gems + 1)
-            ) + chest.chest_type.min_gems
-          : 0;
+      const xpReward = Math.floor(Math.random() * (chest.chest_type.max_xp - chest.chest_type.min_xp + 1)) + chest.chest_type.min_xp;
+      const coinsReward = Math.floor(Math.random() * (chest.chest_type.max_coins - chest.chest_type.min_coins + 1)) + chest.chest_type.min_coins;
+      const gemsReward = Math.random() * 100 < chest.chest_type.gem_chance
+        ? Math.floor(Math.random() * (chest.chest_type.max_gems - chest.chest_type.min_gems + 1)) + chest.chest_type.min_gems
+        : 0;
 
       const rewards = { xp: xpReward, coins: coinsReward, gems: gemsReward };
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
-import { isDevMode } from "@/lib/devModeData";
+import { isDevMode, getDevMissions } from "@/lib/devModeData";
 
 export interface Mission {
   id: string;
@@ -32,7 +32,14 @@ export function useMissions() {
   const [loading, setLoading] = useState(true);
 
   const fetchMissions = async () => {
-    if (isDevMode() || !user) {
+    // Dev mode: return simulated missions
+    if (isDevMode()) {
+      setMissions(getDevMissions());
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -96,7 +103,7 @@ export function useMissions() {
         setMissions((userMissionsData || []) as UserMission[]);
       }
     } catch (error) {
-      // Silently handle - tables may not be created yet
+      // Silently handle
     } finally {
       setLoading(false);
     }
@@ -129,7 +136,19 @@ export function useMissions() {
   }, [user]);
 
   const claimReward = async (userMissionId: string) => {
-    if (!user || isDevMode()) return;
+    // Dev mode: simulate claiming
+    if (isDevMode()) {
+      setMissions(prev => prev.map(m =>
+        m.id === userMissionId ? { ...m, claimed: true } : m
+      ));
+      const mission = missions.find(m => m.id === userMissionId);
+      if (mission) {
+        toast.success(`🎉 Recompensa resgatada! +${mission.mission.xp_reward} XP, +${mission.mission.coins_reward} Coins`);
+      }
+      return;
+    }
+
+    if (!user) return;
 
     try {
       const mission = missions.find((m) => m.id === userMissionId);

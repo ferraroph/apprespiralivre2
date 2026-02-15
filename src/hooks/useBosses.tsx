@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
-import { isDevMode } from "@/lib/devModeData";
+import { isDevMode, DEV_BOSSES, DEV_TODAY_ENCOUNTER } from "@/lib/devModeData";
 
 export interface BossPhase {
   name: string;
@@ -35,7 +35,15 @@ export function useBosses() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isDevMode() || !user) {
+    // Dev mode: return simulated bosses
+    if (isDevMode()) {
+      setBosses(DEV_BOSSES);
+      setTodayEncounter(DEV_TODAY_ENCOUNTER);
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -47,7 +55,6 @@ export function useBosses() {
           .select("*");
 
         if (bossesError) {
-          // Table might not exist - graceful fallback
           console.warn("[BOSSES] Table not available:", bossesError.message);
           setLoading(false);
           return;
@@ -66,7 +73,7 @@ export function useBosses() {
 
         setTodayEncounter(encounterData);
       } catch (error) {
-        // Silently handle - tables may not be created yet
+        // Silently handle
       } finally {
         setLoading(false);
       }

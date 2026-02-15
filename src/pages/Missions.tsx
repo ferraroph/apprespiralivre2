@@ -32,8 +32,7 @@ export default function Missions() {
   };
 
   const handleBattleComplete = () => {
-    // Refresh data after battle
-    window.location.reload();
+    setBattleDialogOpen(false);
   };
 
   if (missionsLoading || bossesLoading || chestsLoading || shopLoading) {

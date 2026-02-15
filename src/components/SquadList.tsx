@@ -7,7 +7,7 @@ import { Users, Flame, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreateSquadDialog } from "@/components/CreateSquadDialog";
-import { isDevMode } from "@/lib/devModeData";
+import { isDevMode, DEV_SQUADS } from "@/lib/devModeData";
 
 interface Squad {
   id: string;
@@ -28,7 +28,9 @@ export function SquadList() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const fetchSquads = useCallback(async () => {
+    // Dev mode: use simulated squads
     if (isDevMode()) {
+      setSquads(DEV_SQUADS);
       setLoading(false);
       return;
     }
@@ -60,7 +62,6 @@ export function SquadList() {
         .in("squad_id", squadIds);
 
       if (memberError) {
-        // RLS recursion or other error - return squads without counts
         const squadsWithoutCounts = (squadsData || []).map(squad => ({
           ...squad,
           member_count: 0
@@ -82,7 +83,7 @@ export function SquadList() {
 
       setSquads(squadsWithCounts);
     } catch (error) {
-      // Silently handle - don't show error toast for table-not-found
+      // Silently handle
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,7 @@ export function SquadList() {
 
   const handleJoinSquad = async (squadId: string) => {
     if (isDevMode()) {
-      toast({ title: "Modo Dev", description: "Join desabilitado em modo de desenvolvimento" });
+      toast({ title: "Simulação Dev", description: "Você entrou no squad! (simulação)" });
       return;
     }
 
@@ -103,15 +104,10 @@ export function SquadList() {
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          title: "Erro",
-          description: "Você precisa estar logado",
-          variant: "destructive",
-        });
+        toast({ title: "Erro", description: "Você precisa estar logado", variant: "destructive" });
         return;
       }
 
-      // Direct insert instead of edge function (join-squad doesn't exist)
       const { error: joinError } = await supabase
         .from("squad_members")
         .insert({
@@ -122,29 +118,18 @@ export function SquadList() {
 
       if (joinError) {
         if (joinError.code === "23505") {
-          toast({
-            title: "Info",
-            description: "Você já é membro deste squad",
-          });
+          toast({ title: "Info", description: "Você já é membro deste squad" });
         } else {
           throw joinError;
         }
         return;
       }
 
-      toast({
-        title: "Sucesso!",
-        description: "Você entrou no squad",
-      });
-
+      toast({ title: "Sucesso!", description: "Você entrou no squad" });
       navigate(`/squads/${squadId}`);
     } catch (error) {
       console.error("Error joining squad:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível entrar no squad. Tente novamente.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Não foi possível entrar no squad.", variant: "destructive" });
     } finally {
       setJoiningSquadId(null);
     }
@@ -161,7 +146,7 @@ export function SquadList() {
           <Skeleton className="h-10 w-32" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-48 w-full" />
           ))}
         </div>

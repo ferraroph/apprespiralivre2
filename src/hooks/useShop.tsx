@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
-import { isDevMode } from "@/lib/devModeData";
+import { isDevMode, DEV_SHOP_ITEMS } from "@/lib/devModeData";
 
 export interface ShopItem {
   id: string;
@@ -23,7 +23,9 @@ export function useShop() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Dev mode: return simulated items
     if (isDevMode()) {
+      setItems(DEV_SHOP_ITEMS);
       setLoading(false);
       return;
     }
@@ -43,7 +45,7 @@ export function useShop() {
         }
         setItems((data || []) as ShopItem[]);
       } catch (error) {
-        // Silently handle - tables may not be created yet
+        // Silently handle
       } finally {
         setLoading(false);
       }
@@ -53,7 +55,15 @@ export function useShop() {
   }, []);
 
   const purchaseItem = async (itemId: string) => {
-    if (!user || isDevMode()) return;
+    // Dev mode: simulate purchase locally
+    if (isDevMode()) {
+      const item = items.find((i) => i.id === itemId);
+      if (!item) return;
+      toast.success(`✅ ${item.name} comprado com sucesso! (simulação dev)`);
+      return;
+    }
+
+    if (!user) return;
 
     try {
       const item = items.find((i) => i.id === itemId);
